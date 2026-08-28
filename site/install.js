@@ -62,14 +62,14 @@ button.addEventListener('click', () => {
     return;
   }
 
-  // Chromium/Android/Windows: one tap opens the native PWA installer when the browser exposes it.
+  // En navegadores compatibles, un toque abre el instalador nativo de la PWA.
   if (bridgeReady()) {
     showHelp('Abriendo el instalador de VIVA CUBA…');
     installBridge.click();
     return;
   }
 
-  // iOS and browsers without beforeinstallprompt require a system/browser confirmation.
+  // iOS y otros navegadores pueden exigir una confirmación del sistema o del navegador.
   showGuide(target);
 });
 
