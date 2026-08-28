@@ -15,13 +15,13 @@ test('OWNER bootstrap never hard-imports optional sticker modules', () => {
 });
 
 test('offline critical shell excludes optional sticker modules', () => {
-  assert.match(sw, /v0\.7\.2/);
+  assert.match(sw, /v0\.7\.\d+/);
   const shellBlock = sw.match(/const SHELL = \[([\s\S]*?)\];/)?.[1] || '';
   assert.doesNotMatch(shellBlock, /stickers\.js/);
   assert.doesNotMatch(shellBlock, /stickers-entry\.js/);
   assert.doesNotMatch(shellBlock, /owner-stickers\.js/);
 });
 
-test('recovery release uses a small explicit version', () => {
-  assert.match(version, /VERSION = ['"]0\.7\.2['"]/);
+test('recovery line stays on controlled v0.7.x microversions', () => {
+  assert.match(version, /VERSION = ['"]0\.7\.\d+['"]/);
 });
