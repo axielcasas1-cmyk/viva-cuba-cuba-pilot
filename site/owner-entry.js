@@ -1,4 +1,5 @@
 import './owner-user.js';
+import './call.js';
 
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
 const OWNER_SESSION_KEY = 'vc_owner_session_v1';
@@ -32,13 +33,15 @@ function persistOwnerIfUnlocked() {
 
 function restorePersistentOwner() {
   if (!ownerIsPersisted()) return;
-  if (location.hash.toLowerCase().startsWith('#invite=')) return;
+  const hash = location.hash.toLowerCase();
+  if (hash.startsWith('#invite=')) return;
+  if (hash.startsWith('#call=')) return;
 
   if (sessionStorage.getItem(OWNER_SESSION_KEY) !== 'unlocked') {
     sessionStorage.setItem(OWNER_SESSION_KEY, 'unlocked');
   }
 
-  if (location.hash.toLowerCase() !== '#owner') {
+  if (hash !== '#owner') {
     const target = `${location.pathname}${location.search}#owner`;
     history.replaceState(null, '', target);
     location.reload();
