@@ -1,3 +1,5 @@
+import './owner-user.js';
+
 const ownerButton = document.getElementById('openOwnerPortal');
 const generateInvite = document.getElementById('generateInvite');
 const ownerActionIds = ['copyCode', 'copyLink', 'shareInvite', 'copyMessage', 'openHostRoom'];
