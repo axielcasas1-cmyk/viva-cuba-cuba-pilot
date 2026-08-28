@@ -4,6 +4,7 @@ import './version.js';
 
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
 const OWNER_SESSION_KEY = 'vc_owner_session_v1';
+const OWNER_MODE_PARAM = 'mode';
 const ownerButton = document.getElementById('openOwnerPortal');
 const generateInvite = document.getElementById('generateInvite');
 const activationView = document.getElementById('activationView');
@@ -23,9 +24,23 @@ function setOwnerActionsEnabled(enabled) {
 function hide(el) { el?.classList.add('hidden'); }
 function show(el) { el?.classList.remove('hidden'); }
 
+function isExplicitOwnerRoute() {
+  const params = new URLSearchParams(location.search);
+  return params.get(OWNER_MODE_PARAM) === 'owner' || location.hash.toLowerCase() === '#owner';
+}
+
 function setOwnerUrl() {
-  const target = `${location.pathname}${location.search}#owner`;
-  history.replaceState(null, '', target);
+  const url = new URL(location.href);
+  url.searchParams.set(OWNER_MODE_PARAM, 'owner');
+  url.hash = 'owner';
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function setPublicUrl() {
+  const url = new URL(location.href);
+  url.searchParams.delete(OWNER_MODE_PARAM);
+  url.hash = '';
+  history.replaceState(null, '', `${url.pathname}${url.search}`);
 }
 
 function showOwnerViewDirect() {
@@ -64,12 +79,17 @@ function invitationFlowIsActive() {
 }
 
 function restorePersistentOwner() {
-  if (!ownerIsPersisted()) return;
   const hash = location.hash.toLowerCase();
   if (hash.startsWith('#invite=') || hash.startsWith('#call=') || invitationFlowIsActive()) return;
+  if (!isExplicitOwnerRoute()) return;
 
-  sessionStorage.setItem(OWNER_SESSION_KEY, 'unlocked');
-  showOwnerViewDirect();
+  if (ownerIsPersisted()) {
+    sessionStorage.setItem(OWNER_SESSION_KEY, 'unlocked');
+    showOwnerViewDirect();
+    return;
+  }
+
+  showOwnerGateDirect();
 }
 
 function openOwnerRoute() {
@@ -119,6 +139,8 @@ if (exitOwner) {
       return;
     }
     localStorage.removeItem(OWNER_PERSIST_KEY);
+    sessionStorage.removeItem(OWNER_SESSION_KEY);
+    setPublicUrl();
   }, { capture: true });
 }
 
