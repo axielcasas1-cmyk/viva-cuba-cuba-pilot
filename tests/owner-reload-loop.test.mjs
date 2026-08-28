@@ -4,19 +4,13 @@ import { readFileSync } from 'node:fs';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('OWNER persistence bootstrap runs before app without reload loops', () => {
-  const html = read('site/index.html');
+test('persistent OWNER restores directly without a reload loop', () => {
   const ownerEntry = read('site/owner-entry.js');
-  const bootstrap = read('site/owner-bootstrap.js');
 
-  const bootstrapPos = html.indexOf('src="./owner-bootstrap.js"');
-  const appPos = html.indexOf('src="./app.js"');
-  assert.ok(bootstrapPos >= 0, 'owner-bootstrap.js must be loaded');
-  assert.ok(appPos >= 0, 'app.js must be loaded');
-  assert.ok(bootstrapPos < appPos, 'OWNER bootstrap must execute before app.js');
-
-  assert.match(bootstrap, /vc_owner_persistent_v1/);
-  assert.match(bootstrap, /vc_owner_session_v1/);
-  assert.doesNotMatch(bootstrap, /location\.reload\s*\(/);
-  assert.doesNotMatch(ownerEntry, /location\.reload\s*\(/, 'OWNER entry must never auto-reload');
+  assert.match(ownerEntry, /vc_owner_persistent_v1/);
+  assert.match(ownerEntry, /vc_owner_session_v1/);
+  assert.match(ownerEntry, /restorePersistentOwner/);
+  assert.match(ownerEntry, /ownerView/);
+  assert.match(ownerEntry, /ownerGate/);
+  assert.doesNotMatch(ownerEntry, /location\.reload\s*\(/, 'OWNER entry must never reload the page');
 });
