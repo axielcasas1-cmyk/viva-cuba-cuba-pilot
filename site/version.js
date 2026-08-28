@@ -1,4 +1,4 @@
-const VERSION = '0.8';
+const VERSION = '0.7.1';
 
 function applyVersion() {
   const badge = document.querySelector('.pilot-badge');
