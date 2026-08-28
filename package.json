@@ -1,10 +1,10 @@
 {
   "name": "viva-cuba-cuba-pilot",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs && node --check site/app.js && node --check site/install.js && node --check site/sw.js && node --check site/lib/core.mjs"
+    "test": "node --test tests/*.test.mjs && node --check site/app.js && node --check site/install.js && node --check site/owner-entry.js && node --check site/sw.js && node --check site/lib/core.mjs"
   },
   "engines": {
     "node": ">=22"
