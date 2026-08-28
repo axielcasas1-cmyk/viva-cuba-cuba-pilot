@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import {
   buildInviteMessage,
   buildInviteUrl,
+  detectInstallPlatform,
   extractInvitePayload,
   generateDx,
   generateInviteCode,
   generateRoomId,
+  installUiState,
   isOwnerRoute,
   isValidDx,
   isValidInvite,
@@ -68,6 +70,29 @@ test('invite message contains code, link and activation instruction', () => {
   assert.match(message, new RegExp(code));
   assert.match(message, /https:\/\/example\.com\/viva\//);
   assert.match(message, /ACTIVAR Y ENTRAR/);
+});
+
+test('install platform detection covers mobile and desktop targets', () => {
+  assert.equal(detectInstallPlatform('Mozilla/5.0 (Linux; Android 14; Pixel 8)'), 'android');
+  assert.equal(detectInstallPlatform('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)'), 'ios');
+  assert.equal(detectInstallPlatform('Mozilla/5.0 (Windows NT 10.0; Win64; x64)'), 'windows');
+  assert.equal(detectInstallPlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5)'), 'mac');
+  assert.equal(detectInstallPlatform('Mozilla/5.0 (X11; CrOS x86_64 15917.65.0)'), 'chromeos');
+});
+
+test('install UI state distinguishes installed, iOS guide and install prompt', () => {
+  assert.deepEqual(installUiState({ platform: 'android', installed: true, promptAvailable: false }), {
+    label: 'APP INSTALADA',
+    mode: 'installed',
+  });
+  assert.deepEqual(installUiState({ platform: 'ios', installed: false, promptAvailable: false }), {
+    label: 'DESCARGAR APP',
+    mode: 'ios-guide',
+  });
+  assert.deepEqual(installUiState({ platform: 'windows', installed: false, promptAvailable: true }), {
+    label: 'DESCARGAR APP',
+    mode: 'prompt',
+  });
 });
 
 test('invalid values are rejected', () => {
