@@ -1,7 +1,5 @@
 import './owner-user.js';
 import './call.js';
-import './stickers-entry.js';
-import './owner-stickers.js';
 import './version.js';
 
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
@@ -56,6 +54,17 @@ function restorePersistentOwner() {
   }
 }
 
+function loadOptionalStickerModules() {
+  return Promise.allSettled([
+    import('./stickers-entry.js'),
+    import('./owner-stickers.js'),
+  ]).then((results) => {
+    const failed = results.filter((result) => result.status === 'rejected');
+    if (failed.length) console.warn('VIVA CUBA: stickers opcionales no disponibles; acceso principal continúa operativo.');
+    return results;
+  });
+}
+
 ownerButton?.addEventListener('click', openOwnerRoute);
 
 generateInvite?.addEventListener('click', () => {
@@ -88,3 +97,9 @@ if (exitOwner) {
 
 setOwnerActionsEnabled(false);
 restorePersistentOwner();
+
+if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(() => loadOptionalStickerModules(), { timeout: 2200 });
+} else {
+  window.setTimeout(() => loadOptionalStickerModules(), 700);
+}
