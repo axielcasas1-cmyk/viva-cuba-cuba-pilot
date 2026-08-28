@@ -15,13 +15,13 @@ Este piloto valida conectividad, experiencia de invitación y videollamada. No r
 6. El usuario escribe su nombre y pulsa `ACTIVAR Y ENTRAR`.
 7. El piloto crea un perfil DX local para ese dispositivo y guarda solo datos no sensibles en almacenamiento local.
 8. El usuario entra a la shell VIVA CUBA.
-9. El botón `VIDEOLLAMADA` abre la sala Jitsi asignada a la invitación en una pestaña/ventana segura.
+9. El administrador/anfitrión abre primero la sala de videollamada. Después el usuario en Cuba pulsa `VIDEOLLAMADA` y entra como invitado a la misma sala.
 
 ## Arquitectura
 - **Frontend público:** GitHub Pages, HTML/CSS/JavaScript estático y PWA instalable.
 - **Invitación:** fragmento URL `#invite=...`; el fragmento no se envía al servidor HTTP.
 - **Perfil piloto:** local al dispositivo. No contiene contraseña, correo, teléfono ni secretos de producción.
-- **Videollamada piloto:** Jitsi Meet mediante sala aleatoria asociada localmente a la invitación. No se implementa servidor WebRTC propio en v0.1.
+- **Videollamada piloto:** Jitsi Meet mediante sala aleatoria asociada localmente a la invitación. El anfitrión abre primero la sala para evitar que el usuario en Cuba tenga que crearla o autenticarse como moderador. No se implementa servidor WebRTC propio en v0.1.
 - **OWNER piloto:** `owner.html` genera código, enlace y sala; es una herramienta de conveniencia del piloto y NO una frontera de seguridad. No incluir credenciales ni secretos en su JavaScript.
 
 ## Seguridad y límites explícitos
@@ -55,7 +55,7 @@ Este piloto valida conectividad, experiencia de invitación y videollamada. No r
 5. Recargar conserva el perfil local del dispositivo.
 6. OWNER genera un VCM diferente en cada ejecución y produce enlace compartible.
 7. El usuario que abre el enlace llega directamente al flujo de activación.
-8. `VIDEOLLAMADA` abre una sala real asociada a la invitación.
+8. El anfitrión puede abrir primero la sala y `VIDEOLLAMADA` lleva al usuario en Cuba a esa misma sala.
 9. La shell muestra claramente que es `CUBA PILOT v0.1`, no producción.
 10. Prueba física final: un dispositivo fuera de Cuba y un dispositivo en Cuba abren el mismo enlace/sala y establecen audio y vídeo.
 
