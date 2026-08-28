@@ -1,4 +1,4 @@
-const CACHE = 'viva-cuba-pilot-v0.8.0';
+const CACHE = 'viva-cuba-pilot-v0.7.1';
 const SHELL = [
   './',
   './index.html',
@@ -7,9 +7,6 @@ const SHELL = [
   './owner-entry.js',
   './owner-user.js',
   './call.js',
-  './stickers.js',
-  './stickers-entry.js',
-  './owner-stickers.js',
   './version.js',
   './styles.css',
   './install.css',
