@@ -1,0 +1,133 @@
+{
+  "contract_version": "1.0.0",
+  "app_version": "0.8.0",
+  "product": "VIVA CUBA + DESAPLICAXI Identity Core",
+  "canonical_runtime": {
+    "repository": "axielcasas1-cmyk/viva-cuba-cuba-pilot",
+    "public_url": "https://axielcasas1-cmyk.github.io/viva-cuba-cuba-pilot/",
+    "hosting": "GitHub Pages",
+    "distribution": "PWA"
+  },
+  "routes": {
+    "root": "/",
+    "owner": "#owner",
+    "invite": "#invite=<VCM>&room=<ROOM>",
+    "call": "#call=<ROOM>",
+    "legacy_owner_redirect": "owner.html"
+  },
+  "roles": {
+    "USER": "communication and personal identity surface",
+    "OWNER": "USER capabilities plus administrative Command Center"
+  },
+  "persistence": {
+    "localStorage": {
+      "vc_cuba_pilot_profile_v1": "local USER pilot profile",
+      "vc_owner_persistent_v1": "persistent OWNER authorization on this browser/device",
+      "vc_owner_personal_v1": "local OWNER personal profile",
+      "vc_owner_contacts_v1": "local OWNER contacts",
+      "vc_owner_invites_v1": "local invite history",
+      "vc_owner_audit_v1": "local OWNER audit",
+      "vc_stickers_recents_v1": "recent sticker IDs",
+      "vc_stickers_favorites_v1": "favorite sticker IDs",
+      "vc_stickers_custom_v1": "small custom sticker payloads for pilot"
+    },
+    "sessionStorage": {
+      "vc_owner_session_v1": "current-tab/browser-session OWNER unlock marker"
+    },
+    "rule": "Never remove or rename a persisted key without an explicit idempotent migration."
+  },
+  "capabilities": {
+    "implemented_pilot": [
+      "single unified USER and OWNER PWA",
+      "VCM invite generation and fragment prefill",
+      "local DX generation",
+      "persistent OWNER device authorization until explicit logout",
+      "PWA install/download UX",
+      "embedded videollamada surface",
+      "OWNER contacts and personal communication workspace",
+      "local invite history and audit",
+      "location sharing by explicit user gesture",
+      "file/photo sharing through supported device Web Share",
+      "hybrid static and animated sticker picker",
+      "sticker recents favorites packs search and custom import"
+    ],
+    "pilot_transport_or_local_only": [
+      "messages through device share channels",
+      "files through Web Share",
+      "Jitsi as replaceable video transport",
+      "local-only OWNER identity/contact/audit state",
+      "local pilot invite revocation marker"
+    ],
+    "requires_desaplicaxi_backend": [
+      "authoritative global DX identity",
+      "true one-time invitation enforcement",
+      "remote revocation",
+      "multi-device sessions",
+      "global device authorization",
+      "internal E2EE messaging",
+      "message delivery/read state",
+      "encrypted media storage",
+      "central immutable audit",
+      "risk engine and anomaly detection",
+      "secure account recovery",
+      "global presence"
+    ]
+  },
+  "stickers": {
+    "mode": "hybrid",
+    "categories": ["Recientes", "Favoritos", "Packs", "Crear sticker"],
+    "built_in_assets": "original VIVA CUBA assets only",
+    "custom_mime_types": ["image/png", "image/webp", "image/gif"],
+    "custom_max_bytes_pilot": 716800,
+    "custom_max_count_pilot": 16,
+    "migration_rule": "Preserve logical sticker IDs and user recents/favorites. Move custom binary payloads to encrypted object storage when backend is introduced."
+  },
+  "video": {
+    "ux": "embedded inside VIVA CUBA",
+    "pilot_transport": "Jitsi Meet IFrame API",
+    "replaceable": true,
+    "migration_rule": "Replacing the SFU/provider must preserve the in-app full-screen call surface and VIVA CUBA routes."
+  },
+  "security_invariants": [
+    "identity must not depend on phone SIM email or a single device",
+    "OWNER is USER plus administration",
+    "never commit plaintext production secrets",
+    "never represent local pilot controls as authoritative backend security",
+    "location requires an explicit user action",
+    "do not log raw invitation or recovery secrets unnecessarily",
+    "use layered authentication in production",
+    "preserve rollback and graceful failure"
+  ],
+  "migration_invariants": [
+    "preserve DX identity mappings",
+    "preserve USER and OWNER role semantics",
+    "preserve contacts",
+    "preserve sticker recents favorites and custom assets",
+    "preserve conversation and attachment history once backend exists",
+    "preserve audit records required by policy",
+    "preserve PWA installability",
+    "preserve public route compatibility or provide redirects",
+    "preserve embedded videollamada UX",
+    "validate Android iPhone and PC",
+    "perform physical Cuba connectivity gate before declaring migration complete",
+    "maintain rollback until post-migration gates are GREEN"
+  ],
+  "canonical_files": [
+    "docs/VIVA_CUBA_MASTER_SPEC.md",
+    "docs/migration-contract.json",
+    "site/index.html",
+    "site/app.js",
+    "site/owner-entry.js",
+    "site/owner-user.js",
+    "site/call.js",
+    "site/stickers.js",
+    "site/stickers-entry.js",
+    "site/owner-stickers.js",
+    "site/install.js",
+    "site/sw.js",
+    "site/manifest.webmanifest",
+    "site/lib/core.mjs",
+    "tests"
+  ],
+  "change_control": "Any change to visible behavior, roles, persistence, routes, security requirements, providers or migration semantics must update the MASTER SPEC and this contract in the same change."
+}
