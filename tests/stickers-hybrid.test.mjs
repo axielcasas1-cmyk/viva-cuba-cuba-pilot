@@ -7,8 +7,8 @@ const read = (p) => fs.readFileSync(new URL(p, import.meta.url), 'utf8');
 
 const stickersExists = exists('../site/stickers.js');
 const stickers = stickersExists ? read('../site/stickers.js') : '';
-const index = read('../site/index.html');
-const owner = read('../site/owner-user.js');
+const userEntry = read('../site/stickers-entry.js');
+const ownerEntry = read('../site/owner-stickers.js');
 
 test('hybrid sticker module exists and supports static plus animated stickers', () => {
   assert.equal(stickersExists, true, 'site/stickers.js must exist');
@@ -25,9 +25,12 @@ test('sticker picker exposes recents favorites packs and create sticker', () => 
   assert.match(stickers, /Crear sticker/);
 });
 
-test('USER and OWNER can launch the same sticker picker', () => {
-  assert.match(index, /id="userStickerButton"/);
-  assert.match(owner, /openStickerPicker/);
+test('USER and OWNER launch the same sticker picker engine', () => {
+  assert.match(userEntry, /id = 'userStickerPanel'|id = "userStickerPanel"|id='userStickerPanel'/);
+  assert.match(userEntry, /userStickerButton/);
+  assert.match(userEntry, /openStickerPicker/);
+  assert.match(ownerEntry, /openStickerPicker/);
+  assert.match(ownerEntry, /#ownerSticker/);
 });
 
 test('custom stickers accept images and animated image formats without copying third-party packs', () => {
