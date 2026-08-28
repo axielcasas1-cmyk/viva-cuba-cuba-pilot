@@ -102,3 +102,22 @@ export function extractInvitePayload(text) {
 export function isValidDx(dx) {
   return typeof dx === 'string' && DX_RE.test(dx.trim());
 }
+
+export function detectInstallPlatform(userAgent = '', maxTouchPoints = 0) {
+  const ua = String(userAgent || '').toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+  if (/macintosh/.test(ua) && Number(maxTouchPoints) > 1) return 'ios';
+  if (/android/.test(ua)) return 'android';
+  if (/cros/.test(ua)) return 'chromeos';
+  if (/windows/.test(ua)) return 'windows';
+  if (/macintosh|mac os x/.test(ua)) return 'mac';
+  if (/linux/.test(ua)) return 'linux';
+  return 'other';
+}
+
+export function installUiState({ platform = 'other', installed = false, promptAvailable = false } = {}) {
+  if (installed) return { label: 'APP INSTALADA', mode: 'installed' };
+  if (promptAvailable) return { label: 'DESCARGAR APP', mode: 'prompt' };
+  if (platform === 'ios') return { label: 'DESCARGAR APP', mode: 'ios-guide' };
+  return { label: 'DESCARGAR APP', mode: 'manual-guide' };
+}

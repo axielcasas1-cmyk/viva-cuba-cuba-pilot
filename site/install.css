@@ -1,0 +1,138 @@
+.download-app-zone {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 18px;
+  padding: 18px;
+  border: 1px solid rgba(90, 215, 255, .42);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(0, 180, 255, .17), transparent 38%),
+    linear-gradient(155deg, rgba(4, 22, 34, .96), rgba(3, 12, 18, .98));
+}
+
+.download-app-zone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(130, 230, 255, .08), transparent);
+  transform: translateX(-100%);
+  animation: electricSweep 3.8s linear infinite;
+}
+
+.download-app-copy {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 14px;
+}
+
+.download-app-copy h2 {
+  margin-bottom: 6px;
+}
+
+.download-app-copy p {
+  margin-bottom: 0;
+  color: #b7dceb;
+  line-height: 1.45;
+}
+
+.download-app-kicker {
+  margin-bottom: 5px !important;
+  color: #77dcff !important;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.download-app-button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 64px;
+  border: 1px solid rgba(145, 235, 255, .95);
+  border-radius: 17px;
+  padding: 0 18px;
+  color: #f4fcff;
+  background: linear-gradient(135deg, #087dff 0%, #00b8ff 52%, #0b63ff 100%);
+  font-weight: 950;
+  font-size: clamp(.95rem, 4vw, 1.08rem);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(215, 249, 255, .8);
+  box-shadow:
+    0 0 9px rgba(0, 190, 255, .82),
+    0 0 22px rgba(0, 145, 255, .72),
+    0 0 44px rgba(0, 105, 255, .54),
+    inset 0 0 14px rgba(255, 255, 255, .18);
+  animation: electricPulse 1.65s ease-in-out infinite;
+}
+
+.download-app-button:focus-visible {
+  outline: 3px solid #d7f8ff;
+  outline-offset: 4px;
+}
+
+.download-app-button:active {
+  transform: scale(.985);
+}
+
+.download-app-button.is-installed {
+  background: linear-gradient(135deg, #075ea8, #0089b7);
+  animation: none;
+  box-shadow: 0 0 14px rgba(0, 175, 235, .45);
+}
+
+.download-app-help {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  padding: 13px 14px;
+  border: 1px solid rgba(94, 211, 255, .34);
+  border-radius: 14px;
+  color: #dff7ff;
+  background: rgba(3, 35, 53, .76);
+  line-height: 1.5;
+}
+
+#installApp {
+  display: none !important;
+}
+
+@keyframes electricPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px rgba(0, 190, 255, .72),
+      0 0 19px rgba(0, 145, 255, .64),
+      0 0 38px rgba(0, 105, 255, .48),
+      inset 0 0 12px rgba(255, 255, 255, .15);
+  }
+  50% {
+    box-shadow:
+      0 0 15px rgba(100, 225, 255, 1),
+      0 0 34px rgba(0, 185, 255, .92),
+      0 0 58px rgba(0, 120, 255, .78),
+      inset 0 0 18px rgba(255, 255, 255, .23);
+  }
+}
+
+@keyframes electricSweep {
+  to { transform: translateX(100%); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .download-app-button:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 16px rgba(110, 230, 255, 1),
+      0 0 36px rgba(0, 185, 255, .96),
+      0 0 62px rgba(0, 120, 255, .82),
+      inset 0 0 18px rgba(255, 255, 255, .24);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .download-app-button,
+  .download-app-zone::after {
+    animation: none;
+  }
+}
