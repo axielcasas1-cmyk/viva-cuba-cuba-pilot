@@ -1,5 +1,7 @@
 import './owner-user.js';
 import './call.js';
+import './stickers-entry.js';
+import './owner-stickers.js';
 
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
 const OWNER_SESSION_KEY = 'vc_owner_session_v1';
