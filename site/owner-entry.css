@@ -1,0 +1,81 @@
+.owner-entry-zone {
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid rgba(190, 120, 255, .5);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(180, 70, 255, .18), transparent 38%),
+    linear-gradient(155deg, rgba(24, 8, 38, .97), rgba(10, 3, 18, .98));
+}
+
+.owner-entry-copy {
+  margin-bottom: 12px;
+}
+
+.owner-entry-kicker {
+  margin: 0 0 5px;
+  color: #d7a8ff;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.owner-entry-copy h2 {
+  margin: 0 0 5px;
+}
+
+.owner-entry-copy p {
+  margin: 0;
+  color: #cfb8df;
+}
+
+.owner-spark-button {
+  width: 100%;
+  min-height: 62px;
+  border: 1px solid rgba(232, 190, 255, .95);
+  border-radius: 17px;
+  padding: 0 18px;
+  color: #fff8ff;
+  background: linear-gradient(135deg, #6b18ff 0%, #b028ff 52%, #5c12d8 100%);
+  font-weight: 950;
+  font-size: 1rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(255, 220, 255, .9);
+  box-shadow:
+    0 0 10px rgba(170, 70, 255, .8),
+    0 0 24px rgba(150, 35, 255, .7),
+    0 0 46px rgba(120, 20, 230, .55),
+    inset 0 0 14px rgba(255, 255, 255, .15);
+  animation: ownerSparkPulse 1.55s ease-in-out infinite;
+}
+
+.owner-spark-button:focus-visible {
+  outline: 3px solid #f0d7ff;
+  outline-offset: 4px;
+}
+
+.owner-spark-button:active {
+  transform: scale(.985);
+}
+
+@keyframes ownerSparkPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 9px rgba(170, 70, 255, .7),
+      0 0 20px rgba(150, 35, 255, .6),
+      0 0 40px rgba(120, 20, 230, .5),
+      inset 0 0 12px rgba(255, 255, 255, .12);
+  }
+  50% {
+    box-shadow:
+      0 0 16px rgba(225, 170, 255, 1),
+      0 0 34px rgba(190, 80, 255, .95),
+      0 0 60px rgba(145, 35, 255, .8),
+      inset 0 0 18px rgba(255, 255, 255, .2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-spark-button { animation: none; }
+}

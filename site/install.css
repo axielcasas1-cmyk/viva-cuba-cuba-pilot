@@ -82,19 +82,36 @@
   box-shadow: 0 0 14px rgba(0, 175, 235, .45);
 }
 
-.download-app-help {
+.download-app-help,
+.download-guide {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   margin-top: 14px;
   padding: 13px 14px;
   border: 1px solid rgba(94, 211, 255, .34);
   border-radius: 14px;
   color: #dff7ff;
-  background: rgba(3, 35, 53, .76);
+  background: rgba(3, 35, 53, .9);
   line-height: 1.5;
 }
 
-#installApp {
+.download-guide strong {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 1.02rem;
+}
+
+.download-guide p {
+  margin: 0 0 12px;
+}
+
+.download-guide button {
+  width: 100%;
+  min-height: 46px;
+}
+
+#installApp,
+.install-bridge {
   display: none !important;
 }
 

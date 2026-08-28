@@ -4,12 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06120d" />
-  <meta name="description" content="VIVA CUBA — Cuba Pilot v0.3" />
+  <meta name="description" content="VIVA CUBA — Cuba Pilot v0.4" />
   <title>VIVA CUBA — Cuba Pilot</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./install.css" />
+  <link rel="stylesheet" href="./owner-entry.css" />
 </head>
 <body>
   <main class="page-shell">
@@ -18,8 +19,17 @@
         <p class="eyebrow">DESAPLICAXI IDENTITY CORE · PILOTO</p>
         <h1>VIVA CUBA <span>🇨🇺</span></h1>
       </div>
-      <span class="pilot-badge">CUBA PILOT v0.3</span>
+      <span class="pilot-badge">CUBA PILOT v0.4</span>
     </header>
+
+    <section class="owner-entry-zone" aria-labelledby="ownerEntryTitle">
+      <div class="owner-entry-copy">
+        <p class="owner-entry-kicker">ADMINISTRACIÓN / COMMAND CENTER</p>
+        <h2 id="ownerEntryTitle">Área OWNER</h2>
+        <p>Acceso protegido al panel administrativo dentro de esta misma VIVA CUBA.</p>
+      </div>
+      <button id="openOwnerPortal" type="button" class="owner-spark-button">⚡ ACCESO OWNER ⚡</button>
+    </section>
 
     <section class="download-app-zone" aria-labelledby="downloadAppTitle">
       <div class="download-app-copy">
@@ -29,6 +39,11 @@
       </div>
       <button id="downloadAppPrimary" type="button" class="download-app-button">DESCARGAR APP</button>
       <div id="downloadAppHelp" class="download-app-help hidden" role="status" aria-live="polite"></div>
+      <div id="downloadGuide" class="download-guide hidden" role="dialog" aria-labelledby="downloadGuideTitle">
+        <strong id="downloadGuideTitle">Instalar VIVA CUBA</strong>
+        <p id="downloadGuideText"></p>
+        <button id="closeDownloadGuide" type="button" class="secondary">ENTENDIDO</button>
+      </div>
     </section>
 
     <section id="activationView" class="panel auth-panel" aria-labelledby="activationTitle">
@@ -97,7 +112,7 @@
       </section>
 
       <section class="panel actions-panel">
-        <button id="installApp" type="button" class="secondary hidden">INSTALAR APP</button>
+        <button id="installApp" type="button" class="install-bridge hidden" tabindex="-1" aria-hidden="true">INSTALAR APP</button>
         <button id="resetPilot" type="button" class="danger-ghost">BORRAR REGISTRO DE ESTE DISPOSITIVO</button>
       </section>
     </section>
@@ -126,7 +141,7 @@
       </div>
 
       <section class="notice warning">
-        OWNER v0.2 opera sobre datos locales de este dispositivo. Gestión global de identidades, sesiones y revocación remota requiere el backend DESAPLICAXI.
+        OWNER v0.4 opera sobre datos locales de este dispositivo. Gestión global de identidades, sesiones y revocación remota requiere el backend DESAPLICAXI.
       </section>
 
       <section class="panel owner-status-grid">
@@ -145,16 +160,16 @@
         <button id="generateInvite" class="primary big" type="button">GENERAR NUEVA INVITACIÓN</button>
         <div class="generated-grid">
           <label>Código de invitación</label>
-          <div class="copy-field"><code id="generatedCode">—</code><button id="copyCode" class="secondary compact" type="button">COPIAR</button></div>
+          <div class="copy-field"><code id="generatedCode">—</code><button id="copyCode" class="secondary compact" type="button" disabled>COPIAR</button></div>
           <label>Enlace para Cuba</label>
-          <div class="copy-field link-field"><code id="generatedLink">—</code><button id="copyLink" class="secondary compact" type="button">COPIAR LINK</button></div>
+          <div class="copy-field link-field"><code id="generatedLink">—</code><button id="copyLink" class="secondary compact" type="button" disabled>COPIAR LINK</button></div>
           <label>Sala de videollamada</label>
           <div class="copy-field"><code id="generatedRoom">—</code></div>
         </div>
         <div class="button-stack owner-actions">
-          <button id="shareInvite" class="secondary" type="button">COMPARTIR INVITACIÓN</button>
-          <button id="copyMessage" class="secondary" type="button">COPIAR MENSAJE COMPLETO</button>
-          <button id="openHostRoom" class="primary" type="button">ABRIR SALA COMO ANFITRIÓN</button>
+          <button id="shareInvite" class="secondary" type="button" disabled>COMPARTIR INVITACIÓN</button>
+          <button id="copyMessage" class="secondary" type="button" disabled>COPIAR MENSAJE COMPLETO</button>
+          <button id="openHostRoom" class="primary" type="button" disabled>ABRIR SALA COMO ANFITRIÓN</button>
         </div>
         <div id="ownerStatus" class="notice success hidden" role="status"></div>
       </section>
@@ -194,6 +209,7 @@
   </main>
 
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./owner-entry.js"></script>
   <script type="module" src="./install.js"></script>
 </body>
 </html>
