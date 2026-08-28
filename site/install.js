@@ -2,7 +2,11 @@ import { detectInstallPlatform, installUiState } from './lib/core.mjs';
 
 const button = document.getElementById('downloadAppPrimary');
 const help = document.getElementById('downloadAppHelp');
-let installPrompt = null;
+const installBridge = document.getElementById('installApp');
+const guide = document.getElementById('downloadGuide');
+const guideTitle = document.getElementById('downloadGuideTitle');
+const guideText = document.getElementById('downloadGuideText');
+const closeGuide = document.getElementById('closeDownloadGuide');
 
 function isStandalone() {
   return window.matchMedia?.('(display-mode: standalone)').matches === true || navigator.standalone === true;
@@ -12,16 +16,37 @@ function platform() {
   return detectInstallPlatform(navigator.userAgent || '', navigator.maxTouchPoints || 0);
 }
 
+function bridgeReady() {
+  return Boolean(installBridge && !installBridge.classList.contains('hidden'));
+}
+
 function showHelp(message) {
   help.textContent = message;
   help.classList.remove('hidden');
+}
+
+function showGuide(target) {
+  const messages = {
+    ios: ['Instalar en iPhone / iPad', 'Abre VIVA CUBA en Safari, pulsa Compartir y selecciona “Añadir a pantalla de inicio”. Luego abre VIVA CUBA desde su icono.'],
+    android: ['Instalar en Android', 'Abre el menú del navegador y pulsa “Instalar app” o “Añadir a pantalla de inicio”. Si el navegador ofrece instalación automática, usa el botón DESCARGAR APP de nuevo.'],
+    windows: ['Instalar en Windows', 'En Chrome o Edge, abre el menú del navegador y elige “Instalar VIVA CUBA”, o usa el icono de instalación de la barra de direcciones.'],
+    mac: ['Instalar en Mac', 'En Safari compatible usa Archivo → Añadir al Dock. En Chrome usa el icono o la opción “Instalar VIVA CUBA”.'],
+    chromeos: ['Instalar en Chromebook', 'Abre el menú de Chrome y selecciona “Instalar VIVA CUBA”.'],
+    linux: ['Instalar en ordenador', 'Abre el menú de Chrome/Chromium y selecciona “Instalar app” si está disponible.'],
+    other: ['Instalar VIVA CUBA', 'Este navegador no expone instalación automática. Usa su menú y busca “Instalar app” o “Añadir a pantalla de inicio”.']
+  };
+  const [title, text] = messages[target] || messages.other;
+  guideTitle.textContent = title;
+  guideText.textContent = text;
+  guide.classList.remove('hidden');
+  guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function refreshButton() {
   const state = installUiState({
     platform: platform(),
     installed: isStandalone(),
-    promptAvailable: Boolean(installPrompt),
+    promptAvailable: bridgeReady(),
   });
   button.textContent = state.label;
   button.dataset.mode = state.mode;
@@ -29,59 +54,37 @@ function refreshButton() {
   button.disabled = false;
 }
 
-function manualGuidance(target) {
-  if (target === 'ios') {
-    return 'iPhone/iPad: abre VIVA CUBA en Safari, pulsa Compartir y selecciona “Añadir a pantalla de inicio”. Después ábrela desde el icono de VIVA CUBA.';
-  }
-  if (target === 'android') {
-    return 'Android: abre el menú del navegador y selecciona “Instalar app” o “Añadir a pantalla de inicio”. Si aparece el aviso automático de instalación, acéptalo.';
-  }
-  if (target === 'windows' || target === 'mac' || target === 'chromeos' || target === 'linux') {
-    return 'Ordenador: abre el menú del navegador y selecciona “Instalar VIVA CUBA” o el icono de instalación de la barra de direcciones.';
-  }
-  return 'Este navegador no ofrece instalación automática. Puedes seguir usando VIVA CUBA desde este mismo enlace o abrir el menú del navegador y buscar “Instalar app” / “Añadir a pantalla de inicio”.';
-}
-
-window.addEventListener('beforeinstallprompt', (event) => {
-  event.preventDefault();
-  installPrompt = event;
-  refreshButton();
-});
-
-window.addEventListener('appinstalled', () => {
-  installPrompt = null;
-  refreshButton();
-  showHelp('VIVA CUBA quedó instalada correctamente en este dispositivo. Ya puedes abrirla desde su icono.');
-});
-
-button.addEventListener('click', async () => {
+button.addEventListener('click', () => {
   const target = platform();
-  const state = installUiState({
-    platform: target,
-    installed: isStandalone(),
-    promptAvailable: Boolean(installPrompt),
-  });
-
-  if (state.mode === 'installed') {
+  if (isStandalone()) {
     showHelp('VIVA CUBA ya está instalada en este dispositivo.');
-    return;
-  }
-
-  if (state.mode === 'prompt' && installPrompt) {
-    const prompt = installPrompt;
-    installPrompt = null;
-    await prompt.prompt();
-    const choice = await prompt.userChoice;
-    if (choice?.outcome === 'accepted') {
-      showHelp('Instalación aceptada. Espera unos segundos y busca el icono de VIVA CUBA en tu dispositivo.');
-    } else {
-      showHelp('La instalación no se completó. Puedes volver a pulsar DESCARGAR APP o instalarla desde el menú del navegador.');
-    }
     refreshButton();
     return;
   }
 
-  showHelp(manualGuidance(target));
+  if (bridgeReady()) {
+    showHelp('Abriendo el instalador de VIVA CUBA…');
+    installBridge.click();
+    return;
+  }
+
+  showGuide(target);
 });
+
+closeGuide?.addEventListener('click', () => {
+  guide.classList.add('hidden');
+  button.focus();
+});
+
+window.addEventListener('appinstalled', () => {
+  guide.classList.add('hidden');
+  showHelp('VIVA CUBA quedó instalada correctamente. Ya puedes abrirla desde su icono.');
+  refreshButton();
+});
+
+if (installBridge) {
+  const observer = new MutationObserver(refreshButton);
+  observer.observe(installBridge, { attributes: true, attributeFilter: ['class'] });
+}
 
 refreshButton();
