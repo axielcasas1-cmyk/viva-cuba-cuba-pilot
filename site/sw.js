@@ -1,4 +1,4 @@
-const CACHE = 'viva-cuba-pilot-v0.7.1';
+const CACHE = 'viva-cuba-pilot-v0.7.2';
 const SHELL = [
   './',
   './index.html',

@@ -6,6 +6,9 @@ const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
 const OWNER_SESSION_KEY = 'vc_owner_session_v1';
 const ownerButton = document.getElementById('openOwnerPortal');
 const generateInvite = document.getElementById('generateInvite');
+const activationView = document.getElementById('activationView');
+const appView = document.getElementById('appView');
+const ownerGate = document.getElementById('ownerGate');
 const ownerView = document.getElementById('ownerView');
 const exitOwner = document.getElementById('exitOwner');
 const ownerActionIds = ['copyCode', 'copyLink', 'shareInvite', 'copyMessage', 'openHostRoom'];
@@ -17,10 +20,33 @@ function setOwnerActionsEnabled(enabled) {
   });
 }
 
-function openOwnerRoute() {
+function hide(el) { el?.classList.add('hidden'); }
+function show(el) { el?.classList.remove('hidden'); }
+
+function setOwnerUrl() {
   const target = `${location.pathname}${location.search}#owner`;
   history.replaceState(null, '', target);
-  location.reload();
+}
+
+function showOwnerViewDirect() {
+  hide(activationView);
+  hide(appView);
+  hide(ownerGate);
+  show(ownerView);
+  setOwnerUrl();
+}
+
+function showOwnerGateDirect() {
+  hide(activationView);
+  hide(appView);
+  hide(ownerView);
+  show(ownerGate);
+  setOwnerUrl();
+  const secret = document.getElementById('ownerSecret');
+  if (secret) {
+    secret.value = '';
+    queueMicrotask(() => secret.focus());
+  }
 }
 
 function ownerIsPersisted() {
@@ -32,26 +58,27 @@ function persistOwnerIfUnlocked() {
   localStorage.setItem(OWNER_PERSIST_KEY, 'unlocked');
 }
 
+function invitationFlowIsActive() {
+  const detected = document.getElementById('inviteDetected');
+  return Boolean(detected && !detected.classList.contains('hidden'));
+}
+
 function restorePersistentOwner() {
   if (!ownerIsPersisted()) return;
   const hash = location.hash.toLowerCase();
-  if (hash.startsWith('#invite=')) return;
-  if (hash.startsWith('#call=')) return;
+  if (hash.startsWith('#invite=') || hash.startsWith('#call=') || invitationFlowIsActive()) return;
 
-  if (sessionStorage.getItem(OWNER_SESSION_KEY) !== 'unlocked') {
+  sessionStorage.setItem(OWNER_SESSION_KEY, 'unlocked');
+  showOwnerViewDirect();
+}
+
+function openOwnerRoute() {
+  if (ownerIsPersisted()) {
     sessionStorage.setItem(OWNER_SESSION_KEY, 'unlocked');
-  }
-
-  if (hash !== '#owner') {
-    const target = `${location.pathname}${location.search}#owner`;
-    history.replaceState(null, '', target);
-    location.reload();
+    showOwnerViewDirect();
     return;
   }
-
-  if (ownerView?.classList.contains('hidden')) {
-    location.reload();
-  }
+  showOwnerGateDirect();
 }
 
 function loadOptionalStickerModules() {
