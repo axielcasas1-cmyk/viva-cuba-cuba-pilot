@@ -1,4 +1,4 @@
-const CACHE = 'viva-cuba-pilot-v0.1.0';
+const CACHE = 'viva-cuba-pilot-v0.2.0';
 const SHELL = [
   './',
   './index.html',
@@ -6,7 +6,8 @@ const SHELL = [
   './styles.css',
   './manifest.webmanifest',
   './icon.svg',
-  './lib/core.mjs'
+  './lib/core.mjs',
+  './owner.html'
 ];
 
 self.addEventListener('install', (event) => {
