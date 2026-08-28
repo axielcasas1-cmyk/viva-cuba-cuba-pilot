@@ -27,13 +27,13 @@ function showHelp(message) {
 
 function showGuide(target) {
   const messages = {
-    ios: ['Instalar en iPhone / iPad', 'Abre VIVA CUBA en Safari, pulsa Compartir y selecciona “Añadir a pantalla de inicio”. Luego abre VIVA CUBA desde su icono.'],
-    android: ['Instalar en Android', 'Abre el menú del navegador y pulsa “Instalar app” o “Añadir a pantalla de inicio”. Si el navegador ofrece instalación automática, usa el botón DESCARGAR APP de nuevo.'],
-    windows: ['Instalar en Windows', 'En Chrome o Edge, abre el menú del navegador y elige “Instalar VIVA CUBA”, o usa el icono de instalación de la barra de direcciones.'],
-    mac: ['Instalar en Mac', 'En Safari compatible usa Archivo → Añadir al Dock. En Chrome usa el icono o la opción “Instalar VIVA CUBA”.'],
-    chromeos: ['Instalar en Chromebook', 'Abre el menú de Chrome y selecciona “Instalar VIVA CUBA”.'],
-    linux: ['Instalar en ordenador', 'Abre el menú de Chrome/Chromium y selecciona “Instalar app” si está disponible.'],
-    other: ['Instalar VIVA CUBA', 'Este navegador no expone instalación automática. Usa su menú y busca “Instalar app” o “Añadir a pantalla de inicio”.']
+    ios: ['Instalar en iPhone / iPad', 'iOS no permite que una web se añada sola a la pantalla de inicio. Desde el navegador donde ya estás, abre Compartir → Añadir a pantalla de inicio → Añadir.'],
+    android: ['Instalar en Android', 'Este navegador no ofreció el instalador automático. Abre su menú y pulsa “Instalar app” o “Añadir a pantalla de inicio”.'],
+    windows: ['Instalar en Windows', 'Este navegador no ofreció el instalador automático. En Chrome o Edge usa “Instalar VIVA CUBA” o el icono de instalación de la barra.'],
+    mac: ['Instalar en Mac', 'Este navegador no ofreció el instalador automático. En Safari compatible usa Archivo → Añadir al Dock; en Chrome usa “Instalar VIVA CUBA”.'],
+    chromeos: ['Instalar en Chromebook', 'Este navegador no ofreció el instalador automático. Abre el menú de Chrome y selecciona “Instalar VIVA CUBA”.'],
+    linux: ['Instalar en ordenador', 'Este navegador no expone instalación automática. Usa Chrome/Chromium y selecciona “Instalar app” si está disponible.'],
+    other: ['Instalar VIVA CUBA', 'Este navegador no expone instalación automática. Usa su opción “Instalar app” o “Añadir a pantalla de inicio”.']
   };
   const [title, text] = messages[target] || messages.other;
   guideTitle.textContent = title;
@@ -62,12 +62,14 @@ button.addEventListener('click', () => {
     return;
   }
 
+  // Chromium/Android/Windows: one tap opens the native PWA installer when the browser exposes it.
   if (bridgeReady()) {
     showHelp('Abriendo el instalador de VIVA CUBA…');
     installBridge.click();
     return;
   }
 
+  // iOS and browsers without beforeinstallprompt require a system/browser confirmation.
   showGuide(target);
 });
 
