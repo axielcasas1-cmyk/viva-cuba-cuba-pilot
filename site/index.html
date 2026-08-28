@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#06120d" />
-  <meta name="description" content="VIVA CUBA — Cuba Pilot v0.1" />
+  <meta name="description" content="VIVA CUBA — Cuba Pilot v0.2" />
   <title>VIVA CUBA — Cuba Pilot</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
@@ -17,7 +17,7 @@
         <p class="eyebrow">DESAPLICAXI IDENTITY CORE · PILOTO</p>
         <h1>VIVA CUBA <span>🇨🇺</span></h1>
       </div>
-      <span class="pilot-badge">CUBA PILOT v0.1</span>
+      <span class="pilot-badge">CUBA PILOT v0.2</span>
     </header>
 
     <section id="activationView" class="panel auth-panel" aria-labelledby="activationTitle">
@@ -88,6 +88,96 @@
       <section class="panel actions-panel">
         <button id="installApp" type="button" class="secondary hidden">INSTALAR APP</button>
         <button id="resetPilot" type="button" class="danger-ghost">BORRAR REGISTRO DE ESTE DISPOSITIVO</button>
+      </section>
+    </section>
+
+    <section id="ownerGate" class="panel hidden" aria-labelledby="ownerGateTitle">
+      <div class="panel-heading">
+        <p class="eyebrow">OWNER · ACCESO LOCAL DE PILOTO</p>
+        <h2 id="ownerGateTitle">Abrir Command Center</h2>
+        <p class="muted">Introduce la clave OWNER del piloto. La clave no se almacena en el repositorio ni en localStorage.</p>
+      </div>
+      <div id="ownerGateError" class="notice error hidden" role="alert"></div>
+      <label for="ownerSecret">Clave OWNER</label>
+      <input id="ownerSecret" type="password" autocomplete="off" spellcheck="false" placeholder="OWN-XXXXXX-XXXXXX-XXXXXX-XXXXXX" />
+      <button id="unlockOwner" class="primary big" type="button">ENTRAR COMO OWNER</button>
+      <button id="cancelOwner" class="secondary big" type="button">VOLVER A VIVA CUBA</button>
+      <p class="microcopy">Esta barrera protege el acceso casual del piloto. La autorización administrativa real llegará con DESAPLICAXI Identity Core.</p>
+    </section>
+
+    <section id="ownerView" class="hidden" aria-labelledby="ownerTitle">
+      <div class="owner-topbar">
+        <div>
+          <p class="eyebrow">OWNER / DESAPLICAXI COMMAND CENTER</p>
+          <h2 id="ownerTitle">VIVA CUBA · Control del piloto</h2>
+        </div>
+        <button id="exitOwner" class="secondary compact" type="button">VOLVER A USER</button>
+      </div>
+
+      <section class="notice warning">
+        OWNER v0.2 opera sobre datos locales de este dispositivo. Gestión global de identidades, sesiones y revocación remota requiere el backend DESAPLICAXI.
+      </section>
+
+      <section class="panel owner-status-grid">
+        <div><span class="label">Red</span><strong id="ownerNetwork">—</strong></div>
+        <div><span class="label">PWA</span><strong id="ownerPwa">—</strong></div>
+        <div><span class="label">Sesión OWNER</span><strong>DESBLOQUEADA · LOCAL</strong></div>
+        <div><span class="label">Perfil USER en este dispositivo</span><strong id="ownerUserProfile">—</strong></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <p class="eyebrow">INVITACIONES</p>
+          <h2>Generador automático</h2>
+          <p class="muted">Genera código VCM, sala y enlace listo para enviar por WhatsApp, SMS, correo u otra mensajería disponible.</p>
+        </div>
+        <button id="generateInvite" class="primary big" type="button">GENERAR NUEVA INVITACIÓN</button>
+        <div class="generated-grid">
+          <label>Código de invitación</label>
+          <div class="copy-field"><code id="generatedCode">—</code><button id="copyCode" class="secondary compact" type="button">COPIAR</button></div>
+          <label>Enlace para Cuba</label>
+          <div class="copy-field link-field"><code id="generatedLink">—</code><button id="copyLink" class="secondary compact" type="button">COPIAR LINK</button></div>
+          <label>Sala de videollamada</label>
+          <div class="copy-field"><code id="generatedRoom">—</code></div>
+        </div>
+        <div class="button-stack owner-actions">
+          <button id="shareInvite" class="secondary" type="button">COMPARTIR INVITACIÓN</button>
+          <button id="copyMessage" class="secondary" type="button">COPIAR MENSAJE COMPLETO</button>
+          <button id="openHostRoom" class="primary" type="button">ABRIR SALA COMO ANFITRIÓN</button>
+        </div>
+        <div id="ownerStatus" class="notice success hidden" role="status"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <p class="eyebrow">IDENTITY COMMAND CENTER</p>
+          <h2>Estado de módulos</h2>
+        </div>
+        <div class="command-grid">
+          <article><strong>Identidades</strong><span id="moduleIdentities">Perfil local visible</span></article>
+          <article><strong>Sesiones</strong><span>OWNER local activa</span></article>
+          <article><strong>Dispositivos</strong><span id="moduleDevice">Este dispositivo</span></article>
+          <article><strong>Presencia</strong><span id="modulePresence">—</span></article>
+          <article><strong>Revocación remota</strong><span>BACKEND DESAPLICAXI REQUERIDO</span></article>
+          <article><strong>Auditoría global</strong><span>BACKEND DESAPLICAXI REQUERIDO</span></article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <p class="eyebrow">INVITACIONES DEL DISPOSITIVO</p>
+          <h2>Historial local</h2>
+          <p class="muted">La marca “revocada” aquí es local y no invalida un enlace ya enviado; la revocación real llegará con backend.</p>
+        </div>
+        <div id="inviteHistory" class="history-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <p class="eyebrow">AUDITORÍA LOCAL</p>
+          <h2>Actividad OWNER</h2>
+        </div>
+        <div id="ownerAudit" class="audit-list"></div>
       </section>
     </section>
   </main>

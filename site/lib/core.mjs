@@ -2,6 +2,7 @@ const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_RE = /VCM-[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){3}/i;
 const ROOM_RE = /^VivaCubaPilot-[A-HJ-NP-Z2-9]{20,40}$/;
 const DX_RE = /^DX-[A-HJ-NP-Z2-9]{8}$/;
+const OWNER_SECRET_RE = /^OWN-[A-F0-9]{6}(?:-[A-F0-9]{6}){3}$/i;
 
 function secureBytes(length) {
   const out = new Uint8Array(length);
@@ -26,6 +27,14 @@ export function isValidRoom(room) {
   return typeof room === 'string' && ROOM_RE.test(room.trim());
 }
 
+export function isValidOwnerSecret(secret) {
+  return typeof secret === 'string' && OWNER_SECRET_RE.test(secret.trim());
+}
+
+export function isOwnerRoute(hash) {
+  return String(hash || '').trim().toLowerCase() === '#owner';
+}
+
 export function generateInviteCode() {
   return `VCM-${[0, 1, 2, 3].map(() => randomChars(4)).join('-')}`;
 }
@@ -44,6 +53,13 @@ export function buildInviteUrl(baseUrl, code, room) {
   const url = new URL(baseUrl);
   url.hash = new URLSearchParams({ invite: code.toUpperCase(), room }).toString();
   return url.toString();
+}
+
+export function buildInviteMessage(code, link) {
+  if (!isValidInvite(code)) throw new Error('INVALID_INVITE');
+  const url = new URL(link);
+  if (!/^https?:$/.test(url.protocol)) throw new Error('INVALID_LINK');
+  return `VIVA CUBA 🇨🇺\nAbre este enlace para entrar:\n${url.toString()}\n\nCódigo de invitación: ${code.toUpperCase()}\n\nCuando aparezca VIVA CUBA, escribe tu nombre y pulsa ACTIVAR Y ENTRAR.`;
 }
 
 export function parseInviteHash(hash) {
