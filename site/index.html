@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06120d" />
+  <meta name="description" content="VIVA CUBA — Cuba Pilot v0.1" />
+  <title>VIVA CUBA — Cuba Pilot</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <header class="brandbar">
+      <div>
+        <p class="eyebrow">DESAPLICAXI IDENTITY CORE · PILOTO</p>
+        <h1>VIVA CUBA <span>🇨🇺</span></h1>
+      </div>
+      <span class="pilot-badge">CUBA PILOT v0.1</span>
+    </header>
+
+    <section id="activationView" class="panel auth-panel" aria-labelledby="activationTitle">
+      <div class="panel-heading">
+        <p class="eyebrow">ACCESO POR INVITACIÓN</p>
+        <h2 id="activationTitle">Entrar a VIVA CUBA</h2>
+        <p class="muted">Abre el enlace que te enviaron. Si el código ya aparece abajo, solo escribe tu nombre y continúa.</p>
+      </div>
+
+      <div id="inviteDetected" class="notice success hidden" role="status">Invitación detectada y cargada.</div>
+      <div id="errorBox" class="notice error hidden" role="alert"></div>
+
+      <label for="inviteCode">Código de invitación</label>
+      <div class="input-row">
+        <input id="inviteCode" autocomplete="one-time-code" inputmode="text" placeholder="VCM-XXXX-XXXX-XXXX-XXXX" spellcheck="false" />
+        <button id="pasteInvite" type="button" class="secondary">PEGAR CÓDIGO</button>
+      </div>
+      <p id="pasteHelp" class="microcopy">También puedes pegar aquí el mensaje completo recibido por mensajería.</p>
+
+      <label for="displayName">Tu nombre</label>
+      <input id="displayName" autocomplete="name" maxlength="50" placeholder="Ej. María" />
+
+      <button id="activateButton" type="button" class="primary big">ACTIVAR Y ENTRAR A VIVA CUBA</button>
+
+      <details class="pilot-note">
+        <summary>Qué valida este piloto</summary>
+        <p>Este piloto comprueba acceso público, invitación, perfil local y videollamada. No sustituye todavía la identidad segura multi-dispositivo de producción.</p>
+      </details>
+    </section>
+
+    <section id="appView" class="hidden" aria-labelledby="homeTitle">
+      <div class="status-strip">
+        <span id="networkDot" class="status-dot"></span>
+        <span id="networkText">Comprobando red…</span>
+      </div>
+
+      <section class="panel hero-panel">
+        <p class="eyebrow">IDENTIDAD PILOTO ACTIVA</p>
+        <h2 id="homeTitle">Bienvenido/a, <span id="profileName"></span></h2>
+        <div class="dx-card">
+          <span>Tu ID DESAPLICAXI de piloto</span>
+          <strong id="profileDx"></strong>
+          <button id="copyDx" type="button" class="secondary compact">COPIAR DX</button>
+        </div>
+      </section>
+
+      <section class="panel call-panel">
+        <div class="panel-heading">
+          <p class="eyebrow">COMUNICACIÓN</p>
+          <h2>Videollamada familiar</h2>
+          <p class="muted">El anfitrión debe abrir primero la sala. Después pulsa el botón para entrar.</p>
+        </div>
+        <button id="joinCall" type="button" class="primary call-button">ENTRAR A VIDEOLLAMADA</button>
+        <div id="callError" class="notice error hidden" role="alert"></div>
+      </section>
+
+      <section class="panel info-grid">
+        <div>
+          <span class="label">Código recibido</span>
+          <strong id="profileInvite"></strong>
+        </div>
+        <div>
+          <span class="label">Estado</span>
+          <strong>ACTIVO · PILOTO</strong>
+        </div>
+      </section>
+
+      <section class="panel actions-panel">
+        <button id="installApp" type="button" class="secondary hidden">INSTALAR APP</button>
+        <button id="resetPilot" type="button" class="danger-ghost">BORRAR REGISTRO DE ESTE DISPOSITIVO</button>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

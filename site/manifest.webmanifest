@@ -1,0 +1,18 @@
+{
+  "name": "VIVA CUBA — Cuba Pilot",
+  "short_name": "VIVA CUBA",
+  "description": "Piloto público VIVA CUBA para validación de acceso y videollamada.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#030907",
+  "theme_color": "#06120d",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
