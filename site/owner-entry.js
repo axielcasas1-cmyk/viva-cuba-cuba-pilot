@@ -78,7 +78,7 @@ function invitationFlowIsActive() {
   return Boolean(detected && !detected.classList.contains('hidden'));
 }
 
-function restoreExplicitOwnerRoute() {
+function restorePersistentOwner() {
   const hash = location.hash.toLowerCase();
   if (hash.startsWith('#invite=') || hash.startsWith('#call=') || invitationFlowIsActive()) return;
   if (!isExplicitOwnerRoute()) return;
@@ -145,7 +145,7 @@ if (exitOwner) {
 }
 
 setOwnerActionsEnabled(false);
-restoreExplicitOwnerRoute();
+restorePersistentOwner();
 
 if ('requestIdleCallback' in window) {
   window.requestIdleCallback(() => loadOptionalStickerModules(), { timeout: 2200 });
