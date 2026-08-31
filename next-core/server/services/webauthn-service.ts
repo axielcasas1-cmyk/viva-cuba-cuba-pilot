@@ -102,7 +102,7 @@ export async function persistCredential(input:{identityId:string;deviceId:string
     await tx`UPDATE devices SET trusted=true,last_seen_at=now() WHERE id=${input.deviceId}`;
     await tx`
       INSERT INTO audit_events (actor_identity_id,kind,result,metadata)
-      VALUES (${input.identityId},'PASSKEY_REGISTERED','ALLOW',jsonb_build_object('deviceId',${input.deviceId},'credentialId',${input.credential.id}))
+      VALUES (${input.identityId},'PASSKEY_REGISTERED','ALLOW',jsonb_build_object('deviceId',${input.deviceId}::text,'credentialId',${input.credential.id}::text))
     `;
   });
 }
@@ -121,7 +121,7 @@ export async function upgradeSessionAal2(input:{sessionId:string;identityId:stri
     if (!updated) throw new Error('SESSION_INVALID');
     await tx`
       INSERT INTO audit_events (actor_identity_id,kind,result,metadata)
-      VALUES (${input.identityId},'PASSKEY_STEP_UP','ALLOW',jsonb_build_object('sessionId',${input.sessionId}))
+      VALUES (${input.identityId},'PASSKEY_STEP_UP','ALLOW',jsonb_build_object('sessionId',${input.sessionId}::text))
     `;
   });
 }
