@@ -1,0 +1,9 @@
+{
+  "identity": {"phoneIndependent": true, "stableDx": true, "multiDevice": true},
+  "routes": {"publicDefault": "/", "owner": "/owner", "publicMayAutoOpenOwner": false},
+  "calls": {"oneToOne": "webrtc-p2p-turn", "groups": "replaceable-sfu", "jitsiCanonical": false},
+  "crypto": {"plaintextMessagesServerSide": false, "plaintextMediaServerSide": false, "plaintextLocationServerSide": false, "privateKeysServerSide": false},
+  "updates": {"blockDuringCriticalActivity": true},
+  "optionalModulesMayBlockCore": false,
+  "migrationRequired": ["identities", "devices", "sessions", "publicKeys", "contacts", "encryptedEnvelopes", "receipts", "mediaRefs", "ownerPolicy", "audit"]
+}
