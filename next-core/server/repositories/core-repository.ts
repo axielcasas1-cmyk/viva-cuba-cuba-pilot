@@ -3,6 +3,7 @@ export type ActiveSessionRecord = {id:string;identityId:string;deviceId:string;a
 export type InvitationSecretRecord = {id:string;salt:string;digest:string;expiresAt:Date};
 export type RecoverySecretRecord = {id:string;identityId:string;salt:string;digest:string};
 export type SessionContext = {session:ActiveSessionRecord;identity:IdentityRecord;device:{id:string;label:string}};
+export type OwnerAccessRecord = {policyId:string};
 
 export interface CoreRepository {
   createIdentity(input:{dx:string;label:string}): Promise<IdentityRecord>;
@@ -18,4 +19,8 @@ export interface CoreRepository {
   recoverIdentity(input:{identityId:string;recoveryId:string;clientDeviceId:string;deviceLabel:string;nextRecoverySalt:string;nextRecoveryDigest:string;sessionTokenHash:string;sessionExpiresAt:Date}):Promise<{identity:IdentityRecord;deviceId:string;sessionId:string}>;
   sessionContext(tokenHash:string):Promise<SessionContext|null>;
   revokeSessionByTokenHash(tokenHash:string):Promise<void>;
+  isTrustedDevice(identityId:string,deviceId:string):Promise<boolean>;
+  bootstrapOwner(input:{identityId:string;deviceId:string;recoverySalt:string;recoveryDigest:string}):Promise<OwnerAccessRecord>;
+  recoverOwner(input:{identityId:string;deviceId:string;recoveryId:string;nextRecoverySalt:string;nextRecoveryDigest:string}):Promise<OwnerAccessRecord>;
+  ownerAccess(identityId:string,deviceId:string):Promise<OwnerAccessRecord|null>;
 }
