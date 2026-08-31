@@ -7,6 +7,12 @@ export function sha256(value:string):string {
   return createHash('sha256').update(value).digest('hex');
 }
 
+export function constantTimeSecretEqual(left:string,right:string):boolean {
+  const a=createHash('sha256').update(left).digest();
+  const b=createHash('sha256').update(right).digest();
+  return timingSafeEqual(a,b);
+}
+
 export async function hashSecret(secret:string, salt = randomBytes(16).toString('base64url')):Promise<{salt:string;digest:string}> {
   const key = await scrypt(secret, salt, 32) as Buffer;
   return {salt,digest:key.toString('base64url')};
@@ -24,4 +30,8 @@ export function randomCode(prefix:string, bytes=12):string {
 
 export function randomRecoveryCode():string {
   return `VCR-${randomBytes(10).toString('hex').toUpperCase()}-${randomBytes(10).toString('hex').toUpperCase()}`;
+}
+
+export function randomOwnerRecoveryCode():string {
+  return `VOR-${randomBytes(10).toString('hex').toUpperCase()}-${randomBytes(10).toString('hex').toUpperCase()}`;
 }
