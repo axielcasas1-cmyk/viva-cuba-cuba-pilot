@@ -8,7 +8,7 @@ on:
       - '.github/workflows/next-core-ci.yml'
   push:
     branches:
-      - 'build/next-core-gates-0-2'
+      - 'main'
     paths:
       - 'next-core/**'
       - 'docs/migrations/**'
