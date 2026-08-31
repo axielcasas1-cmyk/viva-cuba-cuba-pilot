@@ -1,0 +1,60 @@
+name: NEXT CORE CI
+
+on:
+  pull_request:
+    paths:
+      - 'next-core/**'
+      - 'docs/migrations/**'
+      - '.github/workflows/next-core-ci.yml'
+  push:
+    branches:
+      - 'build/next-core-gates-0-2'
+    paths:
+      - 'next-core/**'
+      - 'docs/migrations/**'
+      - '.github/workflows/next-core-ci.yml'
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: viva_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: next-core
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/viva_test
+      SESSION_COOKIE_NAME: vc_session
+      RP_ID: localhost
+      RP_ORIGIN: http://127.0.0.1:4173
+      OWNER_BOOTSTRAP_SECRET: ci-only-owner-bootstrap-secret-0001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: next-core/package.json
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Migration contract
+        run: node scripts/verify-migration-contract.mjs
+      - name: Migrate PostgreSQL
+        run: npm run migrate
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
