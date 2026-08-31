@@ -1,6 +1,11 @@
 import {createHash} from 'node:crypto';
-import {generateRegistrationOptions} from '@simplewebauthn/server';
-import {isoUint8Array} from '@simplewebauthn/server/helpers';
+import {
+  generateAuthenticationOptions,
+  generateRegistrationOptions,
+  verifyAuthenticationResponse,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import {decodeClientDataJSON,isoUint8Array} from '@simplewebauthn/server/helpers';
 import {sql} from '../db.js';
 import {env} from '../env.js';
 
@@ -11,6 +16,8 @@ export type StoredCredentialInput = {
   counter:number;
   transports:string[];
 };
+type RegistrationResponse = Parameters<typeof verifyRegistrationResponse>[0]['response'];
+type AuthenticationResponse = Parameters<typeof verifyAuthenticationResponse>[0]['response'];
 
 export function challengeDigest(challenge:string):string {
   return createHash('sha256').update(challenge).digest('hex');
@@ -55,7 +62,7 @@ export async function consumeChallenge(input:{
     : {};
 }
 
-export async function beginRegistration(input:{identityId:string;deviceId:string;dx:string}) {
+export async function beginRegistration(input:{identityId:string;deviceId:string;dx:string;purpose?:WebAuthnPurpose}) {
   const existing = await sql<{credential_id:string;transports:string[]}[]>`
     SELECT credential_id,transports
     FROM webauthn_credentials
@@ -70,18 +77,104 @@ export async function beginRegistration(input:{identityId:string;deviceId:string
     attestationType:'none',
     supportedAlgorithmIDs:[-7,-257],
     excludeCredentials:existing.map(row=>({id:row.credential_id,transports:row.transports as never[]})),
-    authenticatorSelection:{
-      residentKey:'preferred',
-      userVerification:'required'
-    }
+    authenticatorSelection:{residentKey:'preferred',userVerification:'required'}
   });
   await persistChallenge({
     identityId:input.identityId,
-    purpose:'REGISTER',
+    purpose:input.purpose ?? 'REGISTER',
     challenge:options.challenge,
     payload:{deviceId:input.deviceId}
   });
   return options;
+}
+
+export async function finishRegistration(input:{
+  identityId:string;
+  response:RegistrationResponse;
+  purpose?:WebAuthnPurpose;
+}):Promise<{verified:true;credentialId:string;deviceId:string}> {
+  const {challenge} = decodeClientDataJSON(input.response.response.clientDataJSON);
+  const payload = await consumeChallenge({
+    identityId:input.identityId,
+    purpose:input.purpose ?? 'REGISTER',
+    challenge
+  });
+  const deviceId = typeof payload.deviceId === 'string' ? payload.deviceId : '';
+  if (!deviceId) throw new Error('PASSKEY_DEVICE_INVALID');
+  const verification = await verifyRegistrationResponse({
+    response:input.response,
+    expectedChallenge:challenge,
+    expectedOrigin:env.RP_ORIGIN,
+    expectedRPID:env.RP_ID,
+    requireUserVerification:true
+  });
+  if (!verification.verified || !verification.registrationInfo) throw new Error('PASSKEY_REGISTRATION_INVALID');
+  const credential = verification.registrationInfo.credential;
+  await persistCredential({
+    identityId:input.identityId,
+    deviceId,
+    credential:{
+      id:credential.id,
+      publicKey:credential.publicKey,
+      counter:credential.counter,
+      transports:credential.transports ?? []
+    }
+  });
+  return {verified:true,credentialId:credential.id,deviceId};
+}
+
+export async function beginAuthentication(input:{identityId:string}) {
+  const credentials = await sql<{credential_id:string;transports:string[]}[]>`
+    SELECT credential_id,transports
+    FROM webauthn_credentials
+    WHERE identity_id=${input.identityId} AND status='ACTIVE'
+    ORDER BY created_at ASC
+  `;
+  if (!credentials.length) throw new Error('PASSKEY_NOT_REGISTERED');
+  const options = await generateAuthenticationOptions({
+    rpID:env.RP_ID,
+    userVerification:'required',
+    allowCredentials:credentials.map(row=>({id:row.credential_id,transports:row.transports as never[]}))
+  });
+  await persistChallenge({identityId:input.identityId,purpose:'AUTHENTICATE',challenge:options.challenge});
+  return options;
+}
+
+export async function finishAuthentication(input:{
+  identityId:string;
+  sessionId:string;
+  response:AuthenticationResponse;
+}):Promise<{verified:true;credentialId:string}> {
+  const {challenge} = decodeClientDataJSON(input.response.response.clientDataJSON);
+  await consumeChallenge({identityId:input.identityId,purpose:'AUTHENTICATE',challenge});
+  const [row] = await sql<{credential_id:string;public_key:Uint8Array;counter:number;transports:string[]}[]>`
+    SELECT credential_id,public_key,counter,transports
+    FROM webauthn_credentials
+    WHERE identity_id=${input.identityId} AND credential_id=${input.response.id} AND status='ACTIVE'
+    LIMIT 1
+  `;
+  if (!row) throw new Error('PASSKEY_NOT_FOUND');
+  const verification = await verifyAuthenticationResponse({
+    response:input.response,
+    expectedChallenge:challenge,
+    expectedOrigin:env.RP_ORIGIN,
+    expectedRPID:env.RP_ID,
+    credential:{
+      id:row.credential_id,
+      publicKey:new Uint8Array(row.public_key),
+      counter:Number(row.counter),
+      transports:row.transports as never[]
+    },
+    requireUserVerification:true
+  });
+  if (!verification.verified) throw new Error('PASSKEY_AUTHENTICATION_INVALID');
+  await sql`
+    UPDATE webauthn_credentials
+    SET counter=${verification.authenticationInfo.newCounter},last_used_at=now()
+    WHERE identity_id=${input.identityId} AND credential_id=${row.credential_id} AND status='ACTIVE'
+  `;
+  await upgradeSessionAal2({sessionId:input.sessionId,identityId:input.identityId});
+  return {verified:true,credentialId:row.credential_id};
 }
 
 export async function persistCredential(input:{identityId:string;deviceId:string;credential:StoredCredentialInput}):Promise<void> {
