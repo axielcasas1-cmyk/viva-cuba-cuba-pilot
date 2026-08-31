@@ -20,10 +20,10 @@ export async function persistChallenge(input:{
   challenge:string;
   payload?:Record<string,unknown>;
 }):Promise<void> {
-  const payloadJson = JSON.stringify(input.payload ?? {});
+  const payload = JSON.parse(JSON.stringify(input.payload ?? {}));
   await sql`
     INSERT INTO webauthn_challenges (identity_id,purpose,challenge_hash,payload,expires_at)
-    VALUES (${input.identityId},${input.purpose},${challengeDigest(input.challenge)},${payloadJson}::jsonb,${challengeExpiresAt()})
+    VALUES (${input.identityId},${input.purpose},${challengeDigest(input.challenge)},${sql.json(payload)},${challengeExpiresAt()})
   `;
 }
 
