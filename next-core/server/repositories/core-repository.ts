@@ -4,6 +4,8 @@ export type InvitationSecretRecord = {id:string;salt:string;digest:string;expire
 export type RecoverySecretRecord = {id:string;identityId:string;salt:string;digest:string};
 export type SessionContext = {session:ActiveSessionRecord;identity:IdentityRecord;device:{id:string;label:string}};
 export type OwnerAccessRecord = {policyId:string};
+export type SecurityDeviceRecord = {id:string;label:string;status:'ACTIVE'|'REVOKED';trusted:boolean;createdAt:Date;lastSeenAt:Date|null};
+export type SecuritySessionRecord = {id:string;deviceId:string;status:'ACTIVE'|'REVOKED'|'EXPIRED';aal:1|2;createdAt:Date;expiresAt:Date};
 
 export interface CoreRepository {
   createIdentity(input:{dx:string;label:string}): Promise<IdentityRecord>;
@@ -23,4 +25,8 @@ export interface CoreRepository {
   bootstrapOwner(input:{identityId:string;deviceId:string;recoverySalt:string;recoveryDigest:string}):Promise<OwnerAccessRecord>;
   recoverOwner(input:{identityId:string;deviceId:string;recoveryId:string;nextRecoverySalt:string;nextRecoveryDigest:string}):Promise<OwnerAccessRecord>;
   ownerAccess(identityId:string,deviceId:string):Promise<OwnerAccessRecord|null>;
+  listSecurityDevices(identityId:string):Promise<SecurityDeviceRecord[]>;
+  listSecuritySessions(identityId:string):Promise<SecuritySessionRecord[]>;
+  revokeOwnedSession(identityId:string,sessionId:string):Promise<boolean>;
+  revokeOwnedDevice(identityId:string,deviceId:string):Promise<boolean>;
 }
