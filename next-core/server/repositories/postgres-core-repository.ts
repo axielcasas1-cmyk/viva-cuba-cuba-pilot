@@ -41,9 +41,10 @@ export class PostgresCoreRepository implements CoreRepository {
   }
 
   async appendAudit(input:{actorIdentityId:string|null;kind:string;result:string;metadata:unknown}):Promise<void> {
+    const metadataJson = JSON.stringify(input.metadata ?? {});
     await sql`
       INSERT INTO audit_events (actor_identity_id,kind,result,metadata)
-      VALUES (${input.actorIdentityId},${input.kind},${input.result},${sql.json(input.metadata as Record<string,unknown>)})
+      VALUES (${input.actorIdentityId},${input.kind},${input.result},${metadataJson}::jsonb)
     `;
   }
 }
