@@ -1,5 +1,5 @@
 import {sql} from '../db.js';
-import type {ActiveSessionRecord, CoreRepository, IdentityRecord, InvitationSecretRecord, RecoverySecretRecord, SessionContext} from './core-repository.js';
+import type {ActiveSessionRecord, CoreRepository, IdentityRecord, InvitationSecretRecord, OwnerAccessRecord, RecoverySecretRecord, SessionContext} from './core-repository.js';
 
 const identityFrom = (row:{id:string;dx:string;label:string}):IdentityRecord => ({id:row.id,dx:row.dx,label:row.label});
 
@@ -17,13 +17,19 @@ export class PostgresCoreRepository implements CoreRepository {
     return row.id;
   }
   async findActiveSession(tokenHash:string):Promise<ActiveSessionRecord|null> {
-    const [row] = await sql<{id:string;identity_id:string;device_id:string;aal:number;expires_at:Date;aal2_expires_at:Date|null}[]>`SELECT id::text,identity_id::text,device_id::text,aal,expires_at,aal2_expires_at FROM sessions WHERE token_hash=${tokenHash} AND status='ACTIVE' AND expires_at>now() LIMIT 1`;
-    return row ? {id:row.id,identityId:row.identity_id,deviceId:row.device_id,aal:row.aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at} : null;
+    const [row] = await sql<{id:string;identity_id:string;device_id:string;effective_aal:number;expires_at:Date;aal2_expires_at:Date|null}[]>`
+      SELECT id::text,identity_id::text,device_id::text,
+        CASE WHEN aal=2 AND aal2_expires_at>now() THEN 2 ELSE 1 END AS effective_aal,
+        expires_at,aal2_expires_at
+      FROM sessions
+      WHERE token_hash=${tokenHash} AND status='ACTIVE' AND expires_at>now()
+      LIMIT 1`;
+    return row ? {id:row.id,identityId:row.identity_id,deviceId:row.device_id,aal:row.effective_aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at} : null;
   }
   async revokeSession(sessionId:string):Promise<void> { await sql`UPDATE sessions SET status='REVOKED',revoked_at=now() WHERE id=${sessionId}`; }
   async appendAudit(input:{actorIdentityId:string|null;kind:string;result:string;metadata:unknown}):Promise<void> {
-    const metadataJson = JSON.stringify(input.metadata ?? {});
-    await sql`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.actorIdentityId},${input.kind},${input.result},${metadataJson}::jsonb)`;
+    const metadata=input.metadata && typeof input.metadata==='object' ? input.metadata : {};
+    await sql`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.actorIdentityId},${input.kind},${input.result},${sql.json(metadata as never)})`;
   }
   async createInvitation(input:{lookupHash:string;salt:string;digest:string;label?:string;expiresAt:Date;createdByIdentityId?:string|null}):Promise<string> {
     const [row] = await sql<{id:string}[]>`INSERT INTO invitations (lookup_hash,code_salt,code_digest,label,expires_at,created_by_identity_id) VALUES (${input.lookupHash},${input.salt},${input.digest},${input.label ?? null},${input.expiresAt},${input.createdByIdentityId ?? null}) RETURNING id::text`;
@@ -41,8 +47,7 @@ export class PostgresCoreRepository implements CoreRepository {
       const [device] = await tx<{id:string}[]>`INSERT INTO devices (identity_id,client_device_id,label) VALUES (${identity.id},${input.clientDeviceId},${input.deviceLabel}) RETURNING id::text`;
       await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${identity.id},'USER_RECOVERY',${input.recoverySalt},${input.recoveryDigest})`;
       const [session] = await tx<{id:string}[]>`INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at) VALUES (${identity.id},${device.id},${input.sessionTokenHash},1,${input.sessionExpiresAt}) RETURNING id::text`;
-      const meta = JSON.stringify({deviceId:device.id});
-      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${identity.id},'USER_ACTIVATED','ALLOW',${meta}::jsonb)`;
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${identity.id},'USER_ACTIVATED','ALLOW',jsonb_build_object('deviceId',${device.id}::text))`;
       return {identity:identityFrom(identity),deviceId:device.id,sessionId:session.id};
     });
   }
@@ -61,17 +66,67 @@ export class PostgresCoreRepository implements CoreRepository {
       else [device] = await tx<{id:string}[]>`INSERT INTO devices (identity_id,client_device_id,label) VALUES (${input.identityId},${input.clientDeviceId},${input.deviceLabel}) RETURNING id::text`;
       await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${input.identityId},'USER_RECOVERY',${input.nextRecoverySalt},${input.nextRecoveryDigest})`;
       const [session] = await tx<{id:string}[]>`INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at) VALUES (${input.identityId},${device.id},${input.sessionTokenHash},1,${input.sessionExpiresAt}) RETURNING id::text`;
-      const meta = JSON.stringify({deviceId:device.id});
-      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.identityId},'USER_RECOVERED','ALLOW',${meta}::jsonb)`;
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.identityId},'USER_RECOVERED','ALLOW',jsonb_build_object('deviceId',${device.id}::text))`;
       return {identity:identityFrom(identity),deviceId:device.id,sessionId:session.id};
     });
   }
   async sessionContext(tokenHash:string):Promise<SessionContext|null> {
-    const [row] = await sql<{session_id:string;identity_id:string;device_id:string;aal:number;expires_at:Date;aal2_expires_at:Date|null;dx:string;identity_label:string;device_label:string}[]>`
-      SELECT s.id::text session_id,s.identity_id::text,s.device_id::text,s.aal,s.expires_at,s.aal2_expires_at,i.dx,i.label identity_label,d.label device_label
+    const [row] = await sql<{session_id:string;identity_id:string;device_id:string;effective_aal:number;expires_at:Date;aal2_expires_at:Date|null;dx:string;identity_label:string;device_label:string}[]>`
+      SELECT s.id::text session_id,s.identity_id::text,s.device_id::text,
+        CASE WHEN s.aal=2 AND s.aal2_expires_at>now() THEN 2 ELSE 1 END AS effective_aal,
+        s.expires_at,s.aal2_expires_at,i.dx,i.label identity_label,d.label device_label
       FROM sessions s JOIN identities i ON i.id=s.identity_id JOIN devices d ON d.id=s.device_id
       WHERE s.token_hash=${tokenHash} AND s.status='ACTIVE' AND s.expires_at>now() AND i.status='ACTIVE' AND d.status='ACTIVE' LIMIT 1`;
-    return row ? {session:{id:row.session_id,identityId:row.identity_id,deviceId:row.device_id,aal:row.aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at},identity:{id:row.identity_id,dx:row.dx,label:row.identity_label},device:{id:row.device_id,label:row.device_label}} : null;
+    return row ? {session:{id:row.session_id,identityId:row.identity_id,deviceId:row.device_id,aal:row.effective_aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at},identity:{id:row.identity_id,dx:row.dx,label:row.identity_label},device:{id:row.device_id,label:row.device_label}} : null;
   }
   async revokeSessionByTokenHash(tokenHash:string):Promise<void> { await sql`UPDATE sessions SET status='REVOKED',revoked_at=now() WHERE token_hash=${tokenHash} AND status='ACTIVE'`; }
+  async isTrustedDevice(identityId:string,deviceId:string):Promise<boolean> {
+    const [row]=await sql<{ok:boolean}[]>`SELECT true AS ok FROM devices WHERE id=${deviceId} AND identity_id=${identityId} AND status='ACTIVE' AND trusted=true LIMIT 1`;
+    return !!row?.ok;
+  }
+  async bootstrapOwner(input:{identityId:string;deviceId:string;recoverySalt:string;recoveryDigest:string}):Promise<OwnerAccessRecord> {
+    return sql.begin(async tx=>{
+      await tx`SELECT pg_advisory_xact_lock(hashtext('viva-cuba-owner-policy'))`;
+      const [existing]=await tx<{id:string}[]>`SELECT id::text FROM owner_policy WHERE status='ACTIVE' LIMIT 1 FOR UPDATE`;
+      if(existing)throw new Error('OWNER_ALREADY_CONFIGURED');
+      const [device]=await tx<{id:string}[]>`SELECT id::text FROM devices WHERE id=${input.deviceId} AND identity_id=${input.identityId} AND status='ACTIVE' AND trusted=true LIMIT 1 FOR UPDATE`;
+      if(!device)throw new Error('OWNER_DEVICE_NOT_TRUSTED');
+      const [policy]=await tx<{id:string}[]>`INSERT INTO owner_policy (owner_identity_id) VALUES (${input.identityId}) RETURNING id::text`;
+      await tx`INSERT INTO owner_admin_devices (owner_policy_id,device_id) VALUES (${policy.id},${input.deviceId})`;
+      await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${input.identityId},'OWNER_RECOVERY',${input.recoverySalt},${input.recoveryDigest})`;
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.identityId},'OWNER_BOOTSTRAPPED','ALLOW',jsonb_build_object('policyId',${policy.id}::text,'deviceId',${input.deviceId}::text))`;
+      return {policyId:policy.id};
+    });
+  }
+  async recoverOwner(input:{identityId:string;deviceId:string;recoveryId:string;nextRecoverySalt:string;nextRecoveryDigest:string}):Promise<OwnerAccessRecord> {
+    return sql.begin(async tx=>{
+      await tx`SELECT pg_advisory_xact_lock(hashtext('viva-cuba-owner-policy'))`;
+      const [policy]=await tx<{id:string}[]>`SELECT id::text FROM owner_policy WHERE status='ACTIVE' AND owner_identity_id=${input.identityId} LIMIT 1 FOR UPDATE`;
+      if(!policy)throw new Error('OWNER_RECOVERY_INVALID');
+      const [rotated]=await tx<{id:string}[]>`
+        UPDATE recovery_secrets SET status='ROTATED',rotated_at=now()
+        WHERE id=${input.recoveryId} AND identity_id=${input.identityId} AND purpose='OWNER_RECOVERY' AND status='ACTIVE'
+        RETURNING id::text`;
+      if(!rotated)throw new Error('OWNER_RECOVERY_INVALID');
+      const [device]=await tx<{id:string}[]>`SELECT id::text FROM devices WHERE id=${input.deviceId} AND identity_id=${input.identityId} AND status='ACTIVE' LIMIT 1 FOR UPDATE`;
+      if(!device)throw new Error('OWNER_RECOVERY_INVALID');
+      await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${input.identityId},'OWNER_RECOVERY',${input.nextRecoverySalt},${input.nextRecoveryDigest})`;
+      await tx`
+        INSERT INTO owner_admin_devices (owner_policy_id,device_id,status,revoked_at)
+        VALUES (${policy.id},${input.deviceId},'ACTIVE',NULL)
+        ON CONFLICT (owner_policy_id,device_id) DO UPDATE SET status='ACTIVE',revoked_at=NULL`;
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.identityId},'OWNER_RECOVERED','ALLOW',jsonb_build_object('policyId',${policy.id}::text,'deviceId',${input.deviceId}::text))`;
+      return {policyId:policy.id};
+    });
+  }
+  async ownerAccess(identityId:string,deviceId:string):Promise<OwnerAccessRecord|null> {
+    const [row]=await sql<{policy_id:string}[]>`
+      SELECT op.id::text AS policy_id
+      FROM owner_policy op
+      JOIN owner_admin_devices oad ON oad.owner_policy_id=op.id AND oad.status='ACTIVE'
+      JOIN devices d ON d.id=oad.device_id AND d.status='ACTIVE' AND d.trusted=true
+      WHERE op.status='ACTIVE' AND op.owner_identity_id=${identityId} AND d.id=${deviceId}
+      LIMIT 1`;
+    return row ? {policyId:row.policy_id} : null;
+  }
 }
