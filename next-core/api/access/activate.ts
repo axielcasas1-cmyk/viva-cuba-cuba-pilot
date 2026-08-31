@@ -1,0 +1,4 @@
+import {PostgresCoreRepository} from '../../server/repositories/postgres-core-repository.js';
+import {AccessService} from '../../server/services/access-service.js';
+import {bodyObject,fail,setSessionCookie,type RequestLike,type ResponseLike} from '../../server/http.js';
+export default async function handler(req:RequestLike,res:ResponseLike){try{const b=bodyObject(req),r=await new AccessService(new PostgresCoreRepository()).activate({code:String(b.code||''),label:String(b.label||''),deviceId:String(b.deviceId||''),deviceLabel:String(b.deviceLabel||'Dispositivo principal')});setSessionCookie(res,r.sessionToken);res.status(201).json({identity:r.identity,recoveryCode:r.recoveryCode});}catch(e){const code=e instanceof Error?e.message:'ACTIVATION_FAILED';fail(res,code==='INVALID_OR_EXPIRED_INVITATION'?401:400,code);}}
