@@ -32,7 +32,7 @@ export async function consumeChallenge(input:{
   purpose:WebAuthnPurpose;
   challenge:string;
 }):Promise<Record<string,unknown>> {
-  const [row] = await sql<{payload_json:string}[]>`
+  const [row] = await sql<{payloadJson:string}[]>`
     UPDATE webauthn_challenges
     SET consumed_at=now()
     WHERE challenge_hash=${challengeDigest(input.challenge)}
@@ -40,10 +40,10 @@ export async function consumeChallenge(input:{
       AND consumed_at IS NULL
       AND expires_at>now()
       AND (identity_id IS NOT DISTINCT FROM ${input.identityId})
-    RETURNING payload::text AS payload_json
+    RETURNING payload::text AS "payloadJson"
   `;
   if (!row) throw new Error('WEBAUTHN_CHALLENGE_INVALID');
-  const parsed = JSON.parse(row.payload_json) as unknown;
+  const parsed = JSON.parse(row.payloadJson) as unknown;
   return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
     ? parsed as Record<string,unknown>
     : {};
