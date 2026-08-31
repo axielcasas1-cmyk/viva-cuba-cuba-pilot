@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS identities (
 CREATE TABLE IF NOT EXISTS devices (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   identity_id uuid NOT NULL REFERENCES identities(id) ON DELETE CASCADE,
+  client_device_id text NOT NULL,
   label text NOT NULL CHECK (char_length(label) BETWEEN 1 AND 120),
   fingerprint_hash text,
   status text NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','REVOKED')),
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS devices (
   revoked_at timestamptz
 );
 CREATE INDEX IF NOT EXISTS devices_identity_status_idx ON devices(identity_id,status);
+CREATE UNIQUE INDEX IF NOT EXISTS devices_identity_client_idx ON devices(identity_id,client_device_id);
 
 CREATE TABLE IF NOT EXISTS sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS recovery_secrets (
   revoked_at timestamptz
 );
 CREATE INDEX IF NOT EXISTS recovery_identity_status_idx ON recovery_secrets(identity_id,purpose,status);
+CREATE UNIQUE INDEX IF NOT EXISTS recovery_one_active_idx ON recovery_secrets(identity_id,purpose) WHERE status='ACTIVE';
 
 CREATE TABLE IF NOT EXISTS owner_policy (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -98,6 +101,7 @@ CREATE INDEX IF NOT EXISTS webauthn_challenge_expiry_idx ON webauthn_challenges(
 
 CREATE TABLE IF NOT EXISTS invitations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lookup_hash text NOT NULL UNIQUE,
   code_salt text NOT NULL,
   code_digest text NOT NULL,
   label text,
