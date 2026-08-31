@@ -1,11 +1,23 @@
 import {SESSION_MAX_AGE_SECONDS} from './sessions.js';
 import {env} from './env.js';
 
-export type RequestLike = {body?:unknown;headers?:Record<string,string|string[]|undefined>};
+export type RequestLike = {method?:string;body?:unknown;headers?:Record<string,string|string[]|undefined>};
 export type ResponseLike = {status:(code:number)=>ResponseLike;json:(value:unknown)=>void;setHeader:(name:string,value:string)=>void};
 
 export function bodyObject(req:RequestLike):Record<string,unknown> {
-  return req.body && typeof req.body === 'object' ? req.body as Record<string,unknown> : {};
+  return req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body as Record<string,unknown> : {};
+}
+
+export function recordValue(value:unknown):Record<string,unknown>|null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string,unknown> : null;
+}
+
+export function requirePost(req:RequestLike,res:ResponseLike):boolean {
+  if (req.method !== 'POST') {
+    fail(res,405,'METHOD_NOT_ALLOWED');
+    return false;
+  }
+  return true;
 }
 
 export function readCookie(req:RequestLike,name=env.SESSION_COOKIE_NAME):string {
