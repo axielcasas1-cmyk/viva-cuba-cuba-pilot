@@ -54,6 +54,8 @@ jobs:
         run: npm run migrate
       - name: Typecheck
         run: npm run typecheck
+      - name: WebAuthn contract
+        run: npm run build:test && node --test tests/webauthn.test.mjs
       - name: Test
         run: npm test
       - name: Build
