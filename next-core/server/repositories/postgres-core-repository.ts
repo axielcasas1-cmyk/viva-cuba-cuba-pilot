@@ -1,50 +1,77 @@
 import {sql} from '../db.js';
-import type {ActiveSessionRecord, CoreRepository, IdentityRecord} from './core-repository.js';
+import type {ActiveSessionRecord, CoreRepository, IdentityRecord, InvitationSecretRecord, RecoverySecretRecord, SessionContext} from './core-repository.js';
+
+const identityFrom = (row:{id:string;dx:string;label:string}):IdentityRecord => ({id:row.id,dx:row.dx,label:row.label});
 
 export class PostgresCoreRepository implements CoreRepository {
   async createIdentity(input:{dx:string;label:string}):Promise<IdentityRecord> {
-    const [row] = await sql<{id:string;dx:string;label:string}[]>`
-      INSERT INTO identities (dx,label) VALUES (${input.dx},${input.label})
-      RETURNING id::text,dx,label
-    `;
-    return row;
+    const [row] = await sql<{id:string;dx:string;label:string}[]>`INSERT INTO identities (dx,label) VALUES (${input.dx},${input.label}) RETURNING id::text,dx,label`;
+    return identityFrom(row);
   }
-
   async findIdentityByDx(dx:string):Promise<IdentityRecord|null> {
-    const [row] = await sql<{id:string;dx:string;label:string}[]>`
-      SELECT id::text,dx,label FROM identities WHERE dx=${dx} AND status='ACTIVE' LIMIT 1
-    `;
-    return row ?? null;
+    const [row] = await sql<{id:string;dx:string;label:string}[]>`SELECT id::text,dx,label FROM identities WHERE dx=${dx} AND status='ACTIVE' LIMIT 1`;
+    return row ? identityFrom(row) : null;
   }
-
   async createSession(input:{identityId:string;tokenHash:string;deviceId:string;aal:1|2;expiresAt:Date}):Promise<string> {
-    const [row] = await sql<{id:string}[]>`
-      INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at)
-      VALUES (${input.identityId},${input.deviceId},${input.tokenHash},${input.aal},${input.expiresAt})
-      RETURNING id::text
-    `;
+    const [row] = await sql<{id:string}[]>`INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at) VALUES (${input.identityId},${input.deviceId},${input.tokenHash},${input.aal},${input.expiresAt}) RETURNING id::text`;
     return row.id;
   }
-
   async findActiveSession(tokenHash:string):Promise<ActiveSessionRecord|null> {
-    const [row] = await sql<{id:string;identity_id:string;device_id:string;aal:number;expires_at:Date;aal2_expires_at:Date|null}[]>`
-      SELECT id::text,identity_id::text,device_id::text,aal,expires_at,aal2_expires_at
-      FROM sessions
-      WHERE token_hash=${tokenHash} AND status='ACTIVE' AND expires_at>now()
-      LIMIT 1
-    `;
+    const [row] = await sql<{id:string;identity_id:string;device_id:string;aal:number;expires_at:Date;aal2_expires_at:Date|null}[]>`SELECT id::text,identity_id::text,device_id::text,aal,expires_at,aal2_expires_at FROM sessions WHERE token_hash=${tokenHash} AND status='ACTIVE' AND expires_at>now() LIMIT 1`;
     return row ? {id:row.id,identityId:row.identity_id,deviceId:row.device_id,aal:row.aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at} : null;
   }
-
-  async revokeSession(sessionId:string):Promise<void> {
-    await sql`UPDATE sessions SET status='REVOKED',revoked_at=now() WHERE id=${sessionId}`;
-  }
-
+  async revokeSession(sessionId:string):Promise<void> { await sql`UPDATE sessions SET status='REVOKED',revoked_at=now() WHERE id=${sessionId}`; }
   async appendAudit(input:{actorIdentityId:string|null;kind:string;result:string;metadata:unknown}):Promise<void> {
     const metadataJson = JSON.stringify(input.metadata ?? {});
-    await sql`
-      INSERT INTO audit_events (actor_identity_id,kind,result,metadata)
-      VALUES (${input.actorIdentityId},${input.kind},${input.result},${metadataJson}::jsonb)
-    `;
+    await sql`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.actorIdentityId},${input.kind},${input.result},${metadataJson}::jsonb)`;
   }
+  async createInvitation(input:{lookupHash:string;salt:string;digest:string;label?:string;expiresAt:Date;createdByIdentityId?:string|null}):Promise<string> {
+    const [row] = await sql<{id:string}[]>`INSERT INTO invitations (lookup_hash,code_salt,code_digest,label,expires_at,created_by_identity_id) VALUES (${input.lookupHash},${input.salt},${input.digest},${input.label ?? null},${input.expiresAt},${input.createdByIdentityId ?? null}) RETURNING id::text`;
+    return row.id;
+  }
+  async findInvitationByLookupHash(lookupHash:string):Promise<InvitationSecretRecord|null> {
+    const [row] = await sql<{id:string;code_salt:string;code_digest:string;expires_at:Date}[]>`SELECT id::text,code_salt,code_digest,expires_at FROM invitations WHERE lookup_hash=${lookupHash} AND status='ISSUED' AND expires_at>now() LIMIT 1`;
+    return row ? {id:row.id,salt:row.code_salt,digest:row.code_digest,expiresAt:row.expires_at} : null;
+  }
+  async activateInvitation(input:{invitationId:string;dx:string;label:string;clientDeviceId:string;deviceLabel:string;recoverySalt:string;recoveryDigest:string;sessionTokenHash:string;sessionExpiresAt:Date}):Promise<{identity:IdentityRecord;deviceId:string;sessionId:string}> {
+    return sql.begin(async tx => {
+      const [used] = await tx<{id:string}[]>`UPDATE invitations SET status='USED',used_at=now() WHERE id=${input.invitationId} AND status='ISSUED' AND expires_at>now() RETURNING id::text`;
+      if (!used) throw new Error('INVITATION_NOT_ACTIVE');
+      const [identity] = await tx<{id:string;dx:string;label:string}[]>`INSERT INTO identities (dx,label) VALUES (${input.dx},${input.label}) RETURNING id::text,dx,label`;
+      const [device] = await tx<{id:string}[]>`INSERT INTO devices (identity_id,client_device_id,label) VALUES (${identity.id},${input.clientDeviceId},${input.deviceLabel}) RETURNING id::text`;
+      await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${identity.id},'USER_RECOVERY',${input.recoverySalt},${input.recoveryDigest})`;
+      const [session] = await tx<{id:string}[]>`INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at) VALUES (${identity.id},${device.id},${input.sessionTokenHash},1,${input.sessionExpiresAt}) RETURNING id::text`;
+      const meta = JSON.stringify({deviceId:device.id});
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${identity.id},'USER_ACTIVATED','ALLOW',${meta}::jsonb)`;
+      return {identity:identityFrom(identity),deviceId:device.id,sessionId:session.id};
+    });
+  }
+  async findActiveRecovery(identityId:string,purpose:'USER_RECOVERY'|'OWNER_RECOVERY'):Promise<RecoverySecretRecord|null> {
+    const [row] = await sql<{id:string;identity_id:string;salt:string;digest:string}[]>`SELECT id::text,identity_id::text,salt,digest FROM recovery_secrets WHERE identity_id=${identityId} AND purpose=${purpose} AND status='ACTIVE' LIMIT 1`;
+    return row ? {id:row.id,identityId:row.identity_id,salt:row.salt,digest:row.digest} : null;
+  }
+  async recoverIdentity(input:{identityId:string;recoveryId:string;clientDeviceId:string;deviceLabel:string;nextRecoverySalt:string;nextRecoveryDigest:string;sessionTokenHash:string;sessionExpiresAt:Date}):Promise<{identity:IdentityRecord;deviceId:string;sessionId:string}> {
+    return sql.begin(async tx => {
+      const [rotated] = await tx<{id:string}[]>`UPDATE recovery_secrets SET status='ROTATED',rotated_at=now() WHERE id=${input.recoveryId} AND identity_id=${input.identityId} AND status='ACTIVE' RETURNING id::text`;
+      if (!rotated) throw new Error('RECOVERY_NOT_ACTIVE');
+      const [identity] = await tx<{id:string;dx:string;label:string}[]>`SELECT id::text,dx,label FROM identities WHERE id=${input.identityId} AND status='ACTIVE' LIMIT 1`;
+      if (!identity) throw new Error('IDENTITY_NOT_ACTIVE');
+      let [device] = await tx<{id:string}[]>`SELECT id::text FROM devices WHERE identity_id=${input.identityId} AND client_device_id=${input.clientDeviceId} AND status='ACTIVE' LIMIT 1`;
+      if (device) await tx`UPDATE devices SET label=${input.deviceLabel},last_seen_at=now() WHERE id=${device.id}`;
+      else [device] = await tx<{id:string}[]>`INSERT INTO devices (identity_id,client_device_id,label) VALUES (${input.identityId},${input.clientDeviceId},${input.deviceLabel}) RETURNING id::text`;
+      await tx`INSERT INTO recovery_secrets (identity_id,purpose,salt,digest) VALUES (${input.identityId},'USER_RECOVERY',${input.nextRecoverySalt},${input.nextRecoveryDigest})`;
+      const [session] = await tx<{id:string}[]>`INSERT INTO sessions (identity_id,device_id,token_hash,aal,expires_at) VALUES (${input.identityId},${device.id},${input.sessionTokenHash},1,${input.sessionExpiresAt}) RETURNING id::text`;
+      const meta = JSON.stringify({deviceId:device.id});
+      await tx`INSERT INTO audit_events (actor_identity_id,kind,result,metadata) VALUES (${input.identityId},'USER_RECOVERED','ALLOW',${meta}::jsonb)`;
+      return {identity:identityFrom(identity),deviceId:device.id,sessionId:session.id};
+    });
+  }
+  async sessionContext(tokenHash:string):Promise<SessionContext|null> {
+    const [row] = await sql<{session_id:string;identity_id:string;device_id:string;aal:number;expires_at:Date;aal2_expires_at:Date|null;dx:string;identity_label:string;device_label:string}[]>`
+      SELECT s.id::text session_id,s.identity_id::text,s.device_id::text,s.aal,s.expires_at,s.aal2_expires_at,i.dx,i.label identity_label,d.label device_label
+      FROM sessions s JOIN identities i ON i.id=s.identity_id JOIN devices d ON d.id=s.device_id
+      WHERE s.token_hash=${tokenHash} AND s.status='ACTIVE' AND s.expires_at>now() AND i.status='ACTIVE' AND d.status='ACTIVE' LIMIT 1`;
+    return row ? {session:{id:row.session_id,identityId:row.identity_id,deviceId:row.device_id,aal:row.aal===2?2:1,expiresAt:row.expires_at,aal2ExpiresAt:row.aal2_expires_at},identity:{id:row.identity_id,dx:row.dx,label:row.identity_label},device:{id:row.device_id,label:row.device_label}} : null;
+  }
+  async revokeSessionByTokenHash(tokenHash:string):Promise<void> { await sql`UPDATE sessions SET status='REVOKED',revoked_at=now() WHERE token_hash=${tokenHash} AND status='ACTIVE'`; }
 }
