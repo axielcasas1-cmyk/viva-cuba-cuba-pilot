@@ -19,13 +19,15 @@ function userSignedOut(message='Activa tu identidad DX o recupera una existente.
   const notice=root!.querySelector<HTMLOutputElement>('#notice')!;
   root!.querySelector<HTMLFormElement>('#activate')!.addEventListener('submit',async event=>{
     event.preventDefault();notice.textContent='Activando…';
-    const data=new FormData(event.currentTarget);
+    const form=event.currentTarget as HTMLFormElement;
+    const data=new FormData(form);
     try{const result=await activateUser(String(data.get('code')||''),String(data.get('label')||''));notice.textContent=`Identidad ${result.identity.dx} activada. Guarda ahora tu VCR: ${result.recoveryCode}`;setTimeout(()=>void renderUser(),0);}
     catch(error){notice.textContent=`No se pudo activar: ${errorCode(error)}`;}
   });
   root!.querySelector<HTMLFormElement>('#recover')!.addEventListener('submit',async event=>{
     event.preventDefault();notice.textContent='Recuperando…';
-    const data=new FormData(event.currentTarget);
+    const form=event.currentTarget as HTMLFormElement;
+    const data=new FormData(form);
     try{const result=await recoverUser(String(data.get('dx')||''),String(data.get('recovery')||''));notice.textContent=`Identidad ${result.identity.dx} recuperada. Nuevo VCR: ${result.recoveryCode}`;setTimeout(()=>void renderUser(),0);}
     catch(error){notice.textContent=`No se pudo recuperar: ${errorCode(error)}`;}
   });
