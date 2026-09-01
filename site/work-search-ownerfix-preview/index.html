@@ -10,7 +10,7 @@
 <style>
 html,body{margin:0;min-height:100%;background:#06111f;color:#e9f6ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
 #boot{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
-#boot div{max-width:560px} .mut{opacity:.72;font-size:13px}
+#boot div{max-width:560px}.mut{opacity:.72;font-size:13px}
 </style>
 </head>
 <body>
@@ -46,7 +46,7 @@ html,body{margin:0;min-height:100%;background:#06111f;color:#e9f6ff;font-family:
      .replaceAll("src='/functions/v1/work-search-app/app.js'","src='./loader.js'")
      .replaceAll('src="/app.js"','src="./loader.js"')
      .replaceAll("src='/app.js'","src='./loader.js'");
-   if(!html.includes('src="./loader.js"')&&!html.includes("src='./loader.js'"))html=html.replace(/<\/body>/i,'<script src="./loader.js"></script></body>');
+   if(!html.includes('src="./loader.js"')&&!html.includes("src='./loader.js'"))html=html.replace(/<\/body>/i,'<script src="./loader.js"><\/script></body>');
    document.open();document.write(html);document.close();
  }catch(e){
    document.getElementById('bootState').textContent='No se pudo iniciar la preview: '+String(e?.message||e);
