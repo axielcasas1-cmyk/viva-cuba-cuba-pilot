@@ -3,7 +3,7 @@
 ## MASTER SPEC CANÓNICO — FUENTE ÚNICA DE VERDAD
 
 **Estado del documento:** CANÓNICO / VERSIONADO  
-**Versión base:** CUBA PILOT v0.8  
+**Versión base:** MADRE ÚNICA v0.9  
 **Objetivo:** preservar arquitectura, funciones, decisiones, límites, contratos de datos y requisitos de migración para que ninguna reconstrucción, cambio de proveedor o nuevo chat obligue a redefinir VIVA CUBA desde cero.
 
 > Regla: toda evolución futura debe actualizar este documento y `docs/migration-contract.json` en el mismo cambio de código. Si existe contradicción entre una conversación y este archivo, se revisa el historial Git y se actualiza explícitamente este MASTER SPEC; nunca se sobrescriben requisitos silenciosamente.
@@ -25,13 +25,14 @@ Principios obligatorios:
 7. Seguridad por capas: passkeys/WebAuthn, biometría del sistema, TOTP, dispositivos de confianza, sesiones controladas, cifrado E2EE y gestión segura de claves cuando DESAPLICAXI backend esté conectado.
 8. Fail-safe y graceful degradation: una dependencia caída no debe borrar identidad, perfil o datos locales necesarios para recuperación.
 9. No depender de un único proveedor. La arquitectura debe permitir migración sin reescribir la experiencia principal.
+10. Git `main` + `site/release.json` constituyen la fuente única de release; los clientes convergen automáticamente a la versión estable cuando recuperan conectividad.
 
 ---
 
 ## 2. RUNTIME PÚBLICO ACTUAL
 
 Repositorio: `axielcasas1-cmyk/viva-cuba-cuba-pilot`  
-Hosting piloto: GitHub Pages  
+Hosting piloto/madre web: GitHub Pages  
 URL pública: `https://axielcasas1-cmyk.github.io/viva-cuba-cuba-pilot/`
 
 Rutas lógicas:
@@ -42,7 +43,7 @@ Rutas lógicas:
 - `#call=<ROOM>` — videollamada VIVA CUBA embebida.
 - `owner.html` — compatibilidad histórica; redirige a la aplicación única y no constituye una segunda app.
 
-El piloto está diseñado para validar acceso desde Cuba, instalación PWA, onboarding por invitación, UX USER/OWNER, videollamada y módulos locales. GitHub Pages **no es** el backend final de identidad ni de mensajería.
+El runtime web valida acceso internacional, instalación PWA, onboarding por invitación, UX USER/OWNER, videollamada y módulos locales. GitHub Pages **no es** el backend final de identidad ni de mensajería; DESAPLICAXI backend es la autoridad objetivo.
 
 ---
 
@@ -259,10 +260,14 @@ Comportamiento:
 
 No afirmar que existe APK/IPA nativo hasta que dichos artefactos se construyan y firmen realmente.
 
-Service Worker:
+Service Worker desde MADRE v0.9:
 
-- cachea shell y módulos estáticos;
-- versiones de caché deben incrementarse con cambios funcionales relevantes;
+- caché versionada por release;
+- navegación y código ejecutable con estrategia **network-first** y fallback offline;
+- `release.json` nunca debe servirse desde la caché runtime;
+- al activar un nuevo worker se eliminan caches anteriores de VIVA CUBA;
+- una actualización automática puede intentar como máximo una recarga por versión objetivo en la misma sesión;
+- una llamada activa bloquea/difiere el cambio de versión hasta un estado seguro;
 - la existencia de shell offline no implica videollamada/mensajería offline completa.
 
 ---
@@ -353,6 +358,8 @@ Principales claves actuales:
 - `vc_stickers_recents_v1` — IDs recientes.
 - `vc_stickers_favorites_v1` — IDs favoritos.
 - `vc_stickers_custom_v1` — stickers personalizados pequeños del piloto.
+- `vc_release_audit_v1` — trazabilidad local acotada de comprobación/aplicación de releases, sin IP, ubicación precisa ni contenido privado.
+- `vc_release_reload_once:<version>` — guardia de sesión contra bucles de actualización.
 
 Regla de migración: **no renombrar ni eliminar claves sin migrador explícito**. Si cambia el schema, incrementar versión y crear función de migración idempotente.
 
@@ -370,6 +377,7 @@ Una migración de proveedor/hosting/backend se considera correcta solo si conser
 - stickers recientes/favoritos/personalizados;
 - invitaciones pendientes válidas o estrategia explícita de invalidación;
 - auditoría requerida;
+- manifiesto de release y semántica de convergencia;
 - configuración de PWA;
 - rutas públicas o redirecciones compatibles;
 - experiencia OWNER = USER + ADMIN;
@@ -385,7 +393,7 @@ Antes de cortar proveedor:
 4. importar en sandbox;
 5. ejecutar pruebas de identidad, mensajes, archivos, llamada y OWNER;
 6. probar Android/iPhone/PC;
-7. validar acceso desde Cuba;
+7. validar acceso desde España, Cuba y una red internacional normal;
 8. mantener proveedor anterior como rollback temporal cuando sea posible;
 9. cortar tráfico solo tras gates GREEN;
 10. documentar commit/tag de la migración.
@@ -396,17 +404,21 @@ Antes de cortar proveedor:
 
 - `site/index.html` — shell única.
 - `site/app.js` — activación, perfil, OWNER base e invitaciones.
-- `site/owner-entry.js` — acceso OWNER, persistencia y módulos de extensión.
+- `site/owner-entry.js` — acceso OWNER, persistencia y bootstrap de extensiones/Sync Core.
 - `site/owner-user.js` — zona USER dentro de OWNER.
 - `site/call.js` — videollamada embebida.
 - `site/stickers.js` — motor híbrido de stickers.
 - `site/stickers-entry.js` — integración USER.
 - `site/owner-stickers.js` — integración OWNER.
 - `site/install.js` — instalación PWA.
-- `site/sw.js` — Service Worker/cache.
+- `site/version.js` — versión local del runtime.
+- `site/release.json` — manifiesto estable de la app madre.
+- `site/sync.js` — detección/convergencia segura de releases.
+- `site/sw.js` — Service Worker/cache versionada.
 - `site/manifest.webmanifest` — manifiesto PWA.
 - `site/styles.css`, `install.css`, `owner-entry.css` — estilos.
 - `site/lib/core.mjs` — helpers puros de invitación/DX/room/rol.
+- `site/lib/release-core.mjs` — comparación de releases, guardias y auditoría privada.
 - `tests/*.test.mjs` — contrato automatizado.
 - `.github/workflows/ci.yml` — CI.
 - `.github/workflows/pages.yml` — deploy Pages.
@@ -431,7 +443,12 @@ Una función no está terminada porque compile. Debe incluir, cuando aplique:
 - actualización de documentación;
 - migración/schema cuando cambien datos.
 
-Gate físico Cuba: cualquier capacidad de red crítica debe probarse desde al menos un dispositivo en Cuba antes de declararse certificada para ese entorno.
+Gates de red permanentes:
+
+1. **España:** aplicación, backend y sincronización deben responder desde una red española real.
+2. **Cuba:** cualquier capacidad de red crítica debe probarse desde al menos un dispositivo en Cuba antes de declararse certificada para ese entorno.
+3. **Internacional normal:** verificar que la misma app madre y la misma versión funcionen sin bifurcaciones por país.
+4. **Reconexión:** un dispositivo offline no puede recibir cambios mientras carece totalmente de Internet; al recuperar conectividad debe detectar la madre y converger sin reinstalación manual.
 
 ---
 
@@ -466,7 +483,25 @@ Desde v0.8, cualquier PR/cambio que altere:
 - un requisito de seguridad;
 - una ruta pública;
 - un proveedor;
+- una versión o política de sincronización;
 
 debe actualizar este MASTER SPEC y/o `migration-contract.json`.
 
 **Objetivo final:** que VIVA CUBA pueda ser reconstruida o migrada desde el repositorio y sus contratos sin depender de recordar conversaciones anteriores.
+
+---
+
+## 20. MADRE ÚNICA · RELEASE & SYNC CORE
+
+Desde v0.9 se establece como ley de arquitectura:
+
+1. **Una sola app madre:** `main` del repositorio canónico contiene el código aprobado. No mantener copias funcionalmente divergentes por país.
+2. **Un solo manifiesto estable:** `site/release.json` declara versión, canal, versión mínima y política de actualización.
+3. **Convergencia expedita:** cada cliente comprueba la madre al iniciar, recuperar conexión, volver al primer plano, recibir foco y periódicamente.
+4. **Sin bucles:** una versión objetivo puede provocar como máximo una recarga automática por sesión hasta que `APP_VERSION` converja; si no converge se mantiene operativa la versión actual y se registra la guardia.
+5. **No interrumpir llamadas:** una llamada activa difiere la aplicación de release y el cliente reintenta al finalizar.
+6. **Cuba/offline:** mientras no exista conectividad IP se conserva el shell disponible; al regresar la conexión se consulta inmediatamente la madre y se converge.
+7. **Trazabilidad:** registrar versión local, versión objetivo, momento, resultado, online/offline, idioma y zona horaria; nunca registrar IP, coordenadas precisas ni contenido E2EE por este mecanismo.
+8. **PWA segura:** scripts, estilos, navegación y manifiesto de release priorizan red cuando existe; caché es fallback de resiliencia, no fuente autoritativa de versión.
+9. **Rollback:** un release defectuoso se revierte mediante Git + nueva versión estable; no se fuerza downgrade silencioso del cliente.
+10. **Futuro backend:** DESAPLICAXI/Supabase será la autoridad de identidad, sesiones, dispositivos, auditoría y mensajería, pero la interfaz pública continúa gobernada por la misma app madre.

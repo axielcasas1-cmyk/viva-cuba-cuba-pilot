@@ -14,14 +14,17 @@ test('OWNER bootstrap never hard-imports optional sticker modules', () => {
   assert.match(ownerEntry, /Promise\.allSettled/);
 });
 
-test('offline critical shell excludes optional sticker modules', () => {
-  assert.match(sw, /v0\.7\.\d+/);
+test('Mother offline critical shell stays minimal and update-safe', () => {
+  assert.match(sw, /viva-cuba-mother-v0\.9\.0/);
+  assert.match(sw, /networkFirst/);
+  assert.match(sw, /release\.json/);
   const shellBlock = sw.match(/const SHELL = \[([\s\S]*?)\];/)?.[1] || '';
   assert.doesNotMatch(shellBlock, /stickers\.js/);
   assert.doesNotMatch(shellBlock, /stickers-entry\.js/);
   assert.doesNotMatch(shellBlock, /owner-stickers\.js/);
 });
 
-test('recovery line stays on controlled v0.7.x microversions', () => {
-  assert.match(version, /VERSION = ['"]0\.7\.\d+['"]/);
+test('Mother runtime exposes the controlled v0.9.0 release', () => {
+  assert.match(version, /APP_VERSION = ['"]0\.9\.0['"]/);
+  assert.match(version, /APP_CHANNEL = ['"]stable['"]/);
 });

@@ -1,10 +1,10 @@
 {
   "name": "viva-cuba-cuba-pilot",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs && node --check site/app.js && node --check site/install.js && node --check site/owner-entry.js && node --check site/owner-user.js && node --check site/call.js && node --check site/stickers.js && node --check site/stickers-entry.js && node --check site/owner-stickers.js && node --check site/sw.js && node --check site/lib/core.mjs"
+    "test": "node --test tests/*.test.mjs && node --check site/app.js && node --check site/install.js && node --check site/owner-entry.js && node --check site/owner-user.js && node --check site/call.js && node --check site/stickers.js && node --check site/stickers-entry.js && node --check site/owner-stickers.js && node --check site/version.js && node --check site/sync.js && node --check site/sw.js && node --check site/lib/core.mjs && node --check site/lib/release-core.mjs"
   },
   "engines": {
     "node": ">=22"

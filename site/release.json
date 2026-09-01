@@ -1,0 +1,12 @@
+{
+  "app": "VIVA_CUBA",
+  "version": "0.9.0",
+  "minimumClientVersion": "0.7.0",
+  "channel": "stable",
+  "schemaVersion": 1,
+  "releasedAt": "2026-09-01T19:55:00Z",
+  "checkIntervalSeconds": 30,
+  "updatePolicy": "safe-immediate",
+  "sourceOfTruth": "github:axielcasas1-cmyk/viva-cuba-cuba-pilot@main",
+  "notes": "MADRE ÚNICA v1: Release/Sync Core, trazabilidad y actualización segura sin bucles."
+}
