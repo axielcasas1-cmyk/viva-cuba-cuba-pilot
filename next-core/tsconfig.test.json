@@ -11,5 +11,5 @@
     "sourceMap": false,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["server/**/*.ts", "api/**/*.ts", "src/entry-mode.ts"]
+  "include": ["server/**/*.ts", "api/**/*.ts", "src/entry-mode.ts", "src/passkeys/**/*.ts"]
 }
