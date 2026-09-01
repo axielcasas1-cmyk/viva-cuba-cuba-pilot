@@ -2,6 +2,8 @@ import './styles/base.css';
 import {resolveEntryMode} from './entry-mode.js';
 import {activateUser,currentSession,logoutUser,recoverUser} from './identity/client.js';
 import type {SessionResponse} from './identity/types.js';
+import {registerPasskey,stepUpPasskey} from './passkeys/client.js';
+import {ownerPasskeyAction,userPasskeyActions} from './passkeys/ui-policy.js';
 
 const root=document.querySelector<HTMLDivElement>('#app');
 if(!root)throw new Error('APP_ROOT_MISSING');
@@ -33,14 +35,26 @@ function userSignedOut(message='Activa tu identidad DX o recupera una existente.
   });
 }
 
-function userSignedIn(session:SessionResponse){
+function userSignedIn(session:SessionResponse,message=''){
+  const passkeyActions=userPasskeyActions(session.aal);
+  const stepUpButton=passkeyActions.includes('STEP_UP')?'<button id="passkey-stepup" type="button">VERIFICAR PASSKEY · AAL2</button>':'';
   root!.innerHTML=`<main class="vc-shell" data-entry-mode="USER"><section class="vc-card vc-stack">
     <div class="vc-tag">VIVA CUBA · USER</div><h1>${esc(session.identity.dx)}</h1><p>${esc(session.identity.label)}</p>
     <div class="vc-grid"><div><span>Dispositivo</span><strong>${esc(session.device.label)}</strong></div><div><span>Seguridad</span><strong>AAL${session.aal}</strong></div></div>
-    <div class="vc-actions"><button id="security">DISPOSITIVOS Y SESIONES</button><button id="logout" class="vc-secondary">CERRAR SESIÓN</button></div>
-    <output id="notice" class="vc-notice" aria-live="polite"></output>
+    <div class="vc-actions"><button id="passkey-register" type="button">REGISTRAR PASSKEY</button>${stepUpButton}<button id="security" type="button">DISPOSITIVOS Y SESIONES</button><button id="logout" type="button" class="vc-secondary">CERRAR SESIÓN</button></div>
+    <output id="notice" class="vc-notice" aria-live="polite">${esc(message)}</output>
   </section></main>`;
   const notice=root!.querySelector<HTMLOutputElement>('#notice')!;
+  root!.querySelector<HTMLButtonElement>('#passkey-register')!.addEventListener('click',async()=>{
+    notice.textContent='Abriendo Passkey del sistema…';
+    try{await registerPasskey();notice.textContent='Passkey registrada. Este dispositivo ya es confiable.';}
+    catch(error){notice.textContent=`Passkey: ${errorCode(error)}`;}
+  });
+  root!.querySelector<HTMLButtonElement>('#passkey-stepup')?.addEventListener('click',async()=>{
+    notice.textContent='Verificando Passkey…';
+    try{await stepUpPasskey();userSignedIn(await currentSession(),'AAL2 activado para esta sesión.');}
+    catch(error){notice.textContent=`AAL2: ${errorCode(error)}`;}
+  });
   root!.querySelector<HTMLButtonElement>('#security')!.addEventListener('click',async()=>{
     notice.textContent='Consultando seguridad…';
     try{const response=await fetch('/api/security/list');const data=await response.json();if(!response.ok)throw new Error(String(data?.error||'REQUEST_FAILED'));notice.textContent=`${data.devices.length} dispositivo(s) · ${data.sessions.length} sesión(es) activas.`;}
@@ -61,15 +75,28 @@ async function renderOwner(){
   try{
     const response=await fetch('/api/owner/me');const data=await response.json();if(!response.ok)throw new Error(String(data?.error||'OWNER_FORBIDDEN'));
     status.textContent='OWNER verificado por servidor.';
-    body.innerHTML=`<div class="vc-grid"><div><span>Identidad</span><strong>${esc(data.identity.dx)}</strong></div><div><span>Dispositivo</span><strong>${esc(data.device.label)}</strong></div><div><span>Nivel</span><strong>AAL${esc(data.aal)}</strong></div><div><span>Policy</span><strong>${esc(data.ownerPolicyId)}</strong></div></div><div class="vc-actions"><button id="owner-security">CONTROL DE DISPOSITIVOS</button></div><output id="owner-notice" class="vc-notice" aria-live="polite"></output>`;
+    body.innerHTML=`<div class="vc-grid"><div><span>Identidad</span><strong>${esc(data.identity.dx)}</strong></div><div><span>Dispositivo</span><strong>${esc(data.device.label)}</strong></div><div><span>Nivel</span><strong>AAL${esc(data.aal)}</strong></div><div><span>Policy</span><strong>${esc(data.ownerPolicyId)}</strong></div></div><div class="vc-actions"><button id="owner-security" type="button">CONTROL DE DISPOSITIVOS</button></div><output id="owner-notice" class="vc-notice" aria-live="polite"></output>`;
     body.querySelector<HTMLButtonElement>('#owner-security')!.addEventListener('click',async()=>{
       const out=body.querySelector<HTMLOutputElement>('#owner-notice')!;out.textContent='Consultando…';
       try{const r=await fetch('/api/security/list');const payload=await r.json();if(!r.ok)throw new Error(String(payload?.error||'REQUEST_FAILED'));out.textContent=`${payload.devices.length} dispositivo(s) · ${payload.sessions.length} sesión(es).`;}
       catch(error){out.textContent=`Control: ${errorCode(error)}`;}
     });
   }catch(error){
-    const code=errorCode(error);status.textContent=code==='OWNER_AAL2_REQUIRED'?'OWNER bloqueado: se requiere verificación Passkey/AAL2.':'OWNER bloqueado: sesión administrativa no autorizada.';
-    body.innerHTML=`<div class="vc-lock">${esc(code)}</div>`;
+    const code=errorCode(error);
+    const action=ownerPasskeyAction(code);
+    if(action==='STEP_UP'){
+      status.textContent='OWNER bloqueado: se requiere verificación Passkey/AAL2.';
+      body.innerHTML=`<div class="vc-lock">${esc(code)}</div><div class="vc-actions"><button id="owner-stepup" type="button">VERIFICAR PASSKEY</button></div><output id="owner-notice" class="vc-notice" aria-live="polite"></output>`;
+      const notice=body.querySelector<HTMLOutputElement>('#owner-notice')!;
+      body.querySelector<HTMLButtonElement>('#owner-stepup')!.addEventListener('click',async()=>{
+        notice.textContent='Verificando Passkey…';
+        try{await stepUpPasskey();await renderOwner();}
+        catch(stepError){notice.textContent=`AAL2: ${errorCode(stepError)}`;}
+      });
+      return;
+    }
+    status.textContent='OWNER bloqueado: prepara primero este dispositivo desde VIVA CUBA USER.';
+    body.innerHTML=`<div class="vc-lock">${esc(code)}</div><a class="vc-link" href="/">PREPARAR DISPOSITIVO EN USER</a>`;
   }
 }
 
