@@ -8,7 +8,8 @@
     "outDir": "dist-test",
     "rootDir": ".",
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["server/**/*.ts", "api/**/*.ts"]
+  "include": ["server/**/*.ts", "api/**/*.ts", "src/entry-mode.ts"]
 }
