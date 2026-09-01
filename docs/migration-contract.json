@@ -1,12 +1,28 @@
 {
-  "contract_version": "1.0.0",
-  "app_version": "0.8.0",
+  "contract_version": "1.1.0",
+  "app_version": "0.9.0",
   "product": "VIVA CUBA + DESAPLICAXI Identity Core",
   "canonical_runtime": {
     "repository": "axielcasas1-cmyk/viva-cuba-cuba-pilot",
+    "branch": "main",
     "public_url": "https://axielcasas1-cmyk.github.io/viva-cuba-cuba-pilot/",
     "hosting": "GitHub Pages",
-    "distribution": "PWA"
+    "distribution": "PWA",
+    "source_of_truth": "GitHub main + site/release.json"
+  },
+  "release_sync": {
+    "manifest": "site/release.json",
+    "client": "site/sync.js",
+    "pure_core": "site/lib/release-core.mjs",
+    "policy": "safe-immediate",
+    "check_interval_seconds": 30,
+    "check_triggers": ["startup", "online", "focus", "visible", "interval", "manual-event"],
+    "active_call_policy": "defer until call surface is closed",
+    "reload_policy": "at most one reload attempt per target version per browser session",
+    "offline_policy": "continue current shell and converge immediately after connectivity returns",
+    "service_worker_policy": "versioned cache; navigation/code network-first; release manifest never served from runtime cache",
+    "traceability_key": "vc_release_audit_v1",
+    "privacy": "release audit excludes precise location, IP address and message/media content"
   },
   "routes": {
     "root": "/",
@@ -29,10 +45,12 @@
       "vc_owner_audit_v1": "local OWNER audit",
       "vc_stickers_recents_v1": "recent sticker IDs",
       "vc_stickers_favorites_v1": "favorite sticker IDs",
-      "vc_stickers_custom_v1": "small custom sticker payloads for pilot"
+      "vc_stickers_custom_v1": "small custom sticker payloads for pilot",
+      "vc_release_audit_v1": "bounded privacy-safe release and synchronization audit"
     },
     "sessionStorage": {
-      "vc_owner_session_v1": "current-tab/browser-session OWNER unlock marker"
+      "vc_owner_session_v1": "current-tab/browser-session OWNER unlock marker",
+      "vc_release_reload_once:<version>": "anti-loop guard allowing at most one automatic reload attempt for a target release"
     },
     "rule": "Never remove or rename a persisted key without an explicit idempotent migration."
   },
@@ -49,7 +67,11 @@
       "location sharing by explicit user gesture",
       "file/photo sharing through supported device Web Share",
       "hybrid static and animated sticker picker",
-      "sticker recents favorites packs search and custom import"
+      "sticker recents favorites packs search and custom import",
+      "single Mother release manifest",
+      "safe release convergence after reconnect/focus/visibility",
+      "anti-loop automatic update guard",
+      "privacy-safe local release traceability"
     ],
     "pilot_transport_or_local_only": [
       "messages through device share channels",
@@ -95,6 +117,9 @@
     "never represent local pilot controls as authoritative backend security",
     "location requires an explicit user action",
     "do not log raw invitation or recovery secrets unnecessarily",
+    "release audit must not contain precise location IP or message/media content",
+    "automatic update may perform at most one reload attempt per target version until the client version converges",
+    "application code must prefer network-first update semantics with offline cache fallback",
     "use layered authentication in production",
     "preserve rollback and graceful failure"
   ],
@@ -105,10 +130,12 @@
     "preserve sticker recents favorites and custom assets",
     "preserve conversation and attachment history once backend exists",
     "preserve audit records required by policy",
+    "preserve release manifest and client convergence semantics",
     "preserve PWA installability",
     "preserve public route compatibility or provide redirects",
     "preserve embedded videollamada UX",
     "validate Android iPhone and PC",
+    "validate Spain Cuba and a normal international network",
     "perform physical Cuba connectivity gate before declaring migration complete",
     "maintain rollback until post-migration gates are GREEN"
   ],
@@ -124,10 +151,14 @@
     "site/stickers-entry.js",
     "site/owner-stickers.js",
     "site/install.js",
+    "site/version.js",
+    "site/sync.js",
+    "site/release.json",
     "site/sw.js",
     "site/manifest.webmanifest",
     "site/lib/core.mjs",
+    "site/lib/release-core.mjs",
     "tests"
   ],
-  "change_control": "Any change to visible behavior, roles, persistence, routes, security requirements, providers or migration semantics must update the MASTER SPEC and this contract in the same change."
+  "change_control": "Any change to visible behavior, roles, persistence, routes, security requirements, providers, release semantics or migration semantics must update the MASTER SPEC and this contract in the same change."
 }
