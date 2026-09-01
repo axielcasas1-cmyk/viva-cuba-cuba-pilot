@@ -1,0 +1,17 @@
+{
+  "v18": {
+    "provider": "AppDeploy",
+    "version": "1787770673468",
+    "role": "emergency-rollback",
+    "runtimeUrl": "https://viva-cuba-desaplicaxi-pilot-4get18.v2.appdeploy.ai/",
+    "canonicalDomain": "https://viva.desaplicaxi.com/",
+    "mustPreserve": ["dx", "e2ee-chat", "receipts", "webrtc-p2p-turn", "screen-share", "encrypted-media", "safe-update"]
+  },
+  "v35": {
+    "provider": "AppDeploy",
+    "version": "1787870459426",
+    "role": "advanced-reference",
+    "runtimeUrl": "https://viva-cuba-desaplicaxi-pilot-4get18.v2.appdeploy.ai/",
+    "mustReference": ["owner", "gate", "groups-10", "sfu", "in-call-events", "live-location-e2ee", "pwa-controls"]
+  }
+}
