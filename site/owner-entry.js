@@ -3,6 +3,7 @@ import './call.js';
 import './version.js';
 import './sync.js';
 import './global-identity-entry.js';
+import './owner-diagnostics-entry.js';
 import './global-owner-entry.js';
 
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
