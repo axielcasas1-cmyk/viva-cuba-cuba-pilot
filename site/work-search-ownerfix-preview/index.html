@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06111f">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>WORK SEARCH AX · OWNERFIX PREVIEW</title>
+<style>
+html,body{margin:0;min-height:100%;background:#06111f;color:#e9f6ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+#boot{min-height:100vh;display:grid;place-items:center;padding:24px;text-align:center}
+#boot div{max-width:560px} .mut{opacity:.72;font-size:13px}
+</style>
+</head>
+<body>
+<div id="boot"><div><h2>WORK SEARCH AX</h2><p>Iniciando preview OWNER v2…</p><p class="mut" id="bootState">Cargando release estable validada.</p></div></div>
+<script>
+(async()=>{
+ const SOURCE='https://btdekoigcfpsqteqhcnp.supabase.co/functions/v1/work-search-app/index.html?releaseId=638e72fd-f116-449f-88e4-a647379bceb4';
+ const KEY='./__wsax_source_index__';
+ async function sourceHtml(){
+   try{
+     const r=await fetch(SOURCE,{cache:'no-store'});
+     if(!r.ok)throw new Error('HTTP_'+r.status);
+     const t=await r.text();
+     if(t.length<1000||!/<html/i.test(t))throw new Error('INVALID_HTML');
+     const c=await caches.open('wsax-pages-ownerfix-v1');
+     await c.put(KEY,new Response(t,{headers:{'Content-Type':'text/html'}}));
+     return t;
+   }catch(e){
+     const c=await caches.open('wsax-pages-ownerfix-v1'),r=await c.match(KEY);
+     if(r)return r.text();
+     throw e;
+   }
+ }
+ try{
+   let html=await sourceHtml();
+   html=html
+     .replaceAll('https://btdekoigcfpsqteqhcnp.supabase.co/functions/v1/ws-pwa-manifest','./manifest.webmanifest')
+     .replaceAll('https://btdekoigcfpsqteqhcnp.supabase.co/functions/v1/ws-pwa-icon','./icon.svg')
+     .replaceAll('href="/manifest.webmanifest"','href="./manifest.webmanifest"')
+     .replaceAll("href='/manifest.webmanifest'","href='./manifest.webmanifest'")
+     .replaceAll('href="/icon.svg"','href="./icon.svg"')
+     .replaceAll('src="/functions/v1/work-search-app/app.js"','src="./loader.js"')
+     .replaceAll("src='/functions/v1/work-search-app/app.js'","src='./loader.js'")
+     .replaceAll('src="/app.js"','src="./loader.js"')
+     .replaceAll("src='/app.js'","src='./loader.js'");
+   if(!html.includes('src="./loader.js"')&&!html.includes("src='./loader.js'"))html=html.replace(/<\/body>/i,'<script src="./loader.js"></script></body>');
+   document.open();document.write(html);document.close();
+ }catch(e){
+   document.getElementById('bootState').textContent='No se pudo iniciar la preview: '+String(e?.message||e);
+ }
+})();
+</script>
+</body>
+</html>
