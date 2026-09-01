@@ -62,6 +62,21 @@ export function recoverGlobalIdentity(dx, recoveryKey) {
   });
 }
 
+export function claimGlobalOwner(setupCode) {
+  return rpc('dx_claim_owner_setup', {
+    p_setup_code: clean(setupCode, 80).toUpperCase(),
+    ...deviceMeta(),
+  });
+}
+
+export function issueGlobalInvitation(sessionToken, label = '') {
+  return rpc('dx_issue_invitation', {
+    p_token: clean(sessionToken, 128),
+    p_label: clean(label, 120),
+    p_ttl_hours: 168,
+  });
+}
+
 export function whoAmI(sessionToken) {
   return rpc('dx_whoami', { p_token: clean(sessionToken, 128) }, 8000);
 }
