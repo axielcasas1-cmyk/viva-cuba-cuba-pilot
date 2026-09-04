@@ -1,0 +1,1 @@
+(()=>{'use strict';const CK='kha_google_youtube_client_id';const CLIENT_ID='296523444155-h0kpnfjc7ci87i3lbc9du553qih0kn0q.apps.googleusercontent.com';if(!localStorage.getItem(CK))localStorage.setItem(CK,CLIENT_ID);window.KHAMINDRYA_YOUTUBE_OAUTH={configured:true,clientId:CLIENT_ID};})();
