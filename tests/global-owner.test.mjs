@@ -6,6 +6,7 @@ const read = (p) => fs.readFileSync(new URL(p, import.meta.url), 'utf8');
 const owner = read('../site/global-owner-entry.js');
 const api = read('../site/lib/desaplicaxi-api.mjs');
 const entry = read('../site/owner-entry.js');
+const html = read('../site/index.html');
 
 test('OWNER first claim uses one-time setup RPC and global session', () => {
   assert.match(api, /dx_claim_owner_setup/);
@@ -29,4 +30,17 @@ test('unified runtime loads global OWNER bridge', () => {
 test('explicit OWNER logout revokes global session token', () => {
   assert.match(owner, /logoutGlobal/);
   assert.match(owner, /OWNER_TOKEN_KEY/);
+});
+
+
+test('OWNER can recover securely on a new origin with DX plus rotated VCR', () => {
+  assert.match(html, /id="ownerRecoverDx"/);
+  assert.match(html, /id="ownerRecoverVcr"/);
+  assert.match(html, /id="recoverOwner"/);
+  assert.match(owner, /recoverGlobalIdentity/);
+  assert.match(owner, /whoAmI\(result\.sessionToken\)/);
+  assert.match(owner, /roles\?\.includes\?\.\('owner'\)/);
+  assert.match(owner, /logoutGlobal\(result\.sessionToken\)/);
+  assert.match(owner, /localStorage\.setItem\(OWNER_TOKEN_KEY, result\.sessionToken\)/);
+  assert.match(owner, /showOwnerClaim\(result\)/);
 });
