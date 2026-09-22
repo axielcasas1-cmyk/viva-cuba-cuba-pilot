@@ -15,7 +15,7 @@ test('OWNER bootstrap never hard-imports optional sticker modules', () => {
 });
 
 test('Mother offline critical shell stays minimal and update-safe', () => {
-  assert.match(sw, /viva-cuba-mother-v0\.9\.0/);
+  assert.match(sw, /viva-cuba-mother-v0\.9\.1-mami/);
   assert.match(sw, /networkFirst/);
   assert.match(sw, /release\.json/);
   const shellBlock = sw.match(/const SHELL = \[([\s\S]*?)\];/)?.[1] || '';
@@ -24,7 +24,7 @@ test('Mother offline critical shell stays minimal and update-safe', () => {
   assert.doesNotMatch(shellBlock, /owner-stickers\.js/);
 });
 
-test('Mother runtime exposes the controlled v0.9.0 release', () => {
-  assert.match(version, /APP_VERSION = ['"]0\.9\.0['"]/);
-  assert.match(version, /APP_CHANNEL = ['"]stable['"]/);
+test('Mother runtime exposes the controlled v0.9.1 Mami candidate release', () => {
+  assert.match(version, /APP_VERSION = ['"]0\.9\.1['"]/);
+  assert.match(version, /APP_CHANNEL = ['"]mami-candidate['"]/);
 });
