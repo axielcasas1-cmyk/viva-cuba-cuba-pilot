@@ -40,6 +40,7 @@ function renderGlobalHome(profile) {
   const mamiMode = profile.mode === 'mami';
   document.body.classList.toggle('mami-mode', mamiMode);
   document.body.classList.remove('mami-onboarding');
+  if (mamiMode) window.dispatchEvent(new CustomEvent('viva:mami-ready'));
   if ($('profileName')) $('profileName').textContent = profile.name || 'VIVA CUBA';
   if ($('profileDx')) $('profileDx').textContent = profile.dx;
   if ($('profileInvite')) $('profileInvite').textContent = profile.invite || 'RECUPERADA · DESAPLICAXI';
