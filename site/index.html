@@ -127,6 +127,14 @@
       <label for="ownerSecret">Clave OWNER</label>
       <input id="ownerSecret" type="password" autocomplete="off" spellcheck="false" placeholder="OWN-XXXXXX-XXXXXX-XXXXXX-XXXXXX" />
       <button id="unlockOwner" class="primary big" type="button">ENTRAR COMO OWNER</button>
+      <details id="ownerRecoveryDetails" class="owner-recovery">
+        <summary>YA SOY OWNER · RECUPERAR CON DX + VCR</summary>
+        <label for="ownerRecoverDx">DX OWNER</label>
+        <input id="ownerRecoverDx" autocomplete="username" spellcheck="false" placeholder="DX-XXXXXXXX" />
+        <label for="ownerRecoverVcr">VCR OWNER</label>
+        <input id="ownerRecoverVcr" autocomplete="off" spellcheck="false" placeholder="VCR-XXXXX-XXXXX-XXXXX" />
+        <button id="recoverOwner" class="secondary big" type="button">RECUPERAR OWNER EN ESTE DISPOSITIVO</button>
+      </details>
       <button id="cancelOwner" class="secondary big" type="button">VOLVER A VIVA CUBA</button>
       <p class="microcopy">Esta barrera protege el acceso casual del piloto. La autorización administrativa real llegará con DESAPLICAXI Identity Core.</p>
     </section>
