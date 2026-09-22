@@ -3,6 +3,8 @@ import { activateGlobalInvitation, recoverGlobalIdentity, whoAmI } from './lib/d
 const PROFILE_KEY = 'vc_cuba_pilot_profile_v1';
 const SESSION_KEY = 'vc_dx_session_v1';
 const RECOVERY_UI_ID = 'dxRecoveryPanel';
+const MAMI_PENDING_KEY = 'vc_mami_pending_v1';
+const MAMI_ROOM_KEY = 'vc_mami_room_v1';
 let activationBusy = false;
 
 const $ = (id) => document.getElementById(id);
@@ -11,12 +13,13 @@ function loadProfileRaw() {
   try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); } catch { return null; }
 }
 
-function saveGlobalProfile({ dx, displayName, invite = '', room = '' }) {
+function saveGlobalProfile({ dx, displayName, invite = '', room = '', mode = '' }) {
   const profile = {
     name: displayName,
     dx,
     invite,
     room,
+    mode,
     activatedAt: new Date().toISOString(),
     version: '0.9.0-global',
     backend: 'desaplicaxi-global',
@@ -34,14 +37,27 @@ function showView(id) {
 
 function renderGlobalHome(profile) {
   if (!profile?.dx) return;
+  const mamiMode = profile.mode === 'mami';
+  document.body.classList.toggle('mami-mode', mamiMode);
+  document.body.classList.remove('mami-onboarding');
   if ($('profileName')) $('profileName').textContent = profile.name || 'VIVA CUBA';
   if ($('profileDx')) $('profileDx').textContent = profile.dx;
   if ($('profileInvite')) $('profileInvite').textContent = profile.invite || 'RECUPERADA · DESAPLICAXI';
   showView('appView');
   const join = $('joinCall');
+  if (join) {
+    join.textContent = mamiMode ? '📹 LLAMAR A AXIEL' : 'ENTRAR A VIDEOLLAMADA';
+    join.setAttribute('aria-label', mamiMode ? 'Llamar a Axiel por videollamada' : 'Entrar a videollamada');
+  }
+  const callTitle = document.querySelector('.call-panel h2');
+  const callHelp = document.querySelector('.call-panel .muted');
+  if (mamiMode) {
+    if (callTitle) callTitle.textContent = 'Axiel';
+    if (callHelp) callHelp.textContent = 'Toca el botón verde para llamarme.';
+  }
   if (join && !profile.room) {
     join.disabled = true;
-    join.title = 'Esta identidad recuperada no tiene una sala activa. Recibe o crea una nueva invitación de llamada.';
+    join.title = 'La llamada todavía no tiene una sala activa. Pide a Axiel que envíe un enlace nuevo.';
   }
 }
 
@@ -153,11 +169,11 @@ function ensureRecoveryUi() {
   });
 }
 
-async function globalizeActivation() {
+async function globalizeActivation({ mami = false } = {}) {
   if (activationBusy) return;
   const provisional = loadProfileRaw();
   const code = $('inviteCode')?.value.trim().toUpperCase() || provisional?.invite || '';
-  const name = $('displayName')?.value.trim() || provisional?.name || '';
+  const name = mami ? 'Mami' : ($('displayName')?.value.trim() || provisional?.name || '');
   if (!/^VCM-[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){3}$/i.test(code) || name.length < 2) return;
 
   activationBusy = true;
@@ -171,17 +187,25 @@ async function globalizeActivation() {
       dx: result.dx,
       displayName: result.displayName || name,
       invite: code,
-      room: provisional?.room || '',
+      room: mami ? (sessionStorage.getItem(MAMI_ROOM_KEY) || provisional?.room || '') : (provisional?.room || ''),
+      mode: mami ? 'mami' : (provisional?.mode || ''),
     });
-    renderGlobalHome(profile);
-    showActivationConfirmation(result, profile);
+    if (mami) {
+      sessionStorage.removeItem(MAMI_PENDING_KEY);
+      sessionStorage.removeItem(MAMI_ROOM_KEY);
+      renderGlobalHome(profile);
+    } else {
+      renderGlobalHome(profile);
+      showActivationConfirmation(result, profile);
+    }
   } catch (err) {
     localStorage.removeItem(PROFILE_KEY);
     localStorage.removeItem(SESSION_KEY);
     showView('activationView');
     setActivationError(err?.message === 'DESAPLICAXI_TIMEOUT'
-      ? 'No se pudo contactar con DESAPLICAXI. No se creó ninguna identidad local falsa. Reintenta cuando vuelva la conexión.'
-      : 'Invitación inválida, usada, vencida o no autorizada por DESAPLICAXI.');
+      ? (mami ? 'La conexión está floja. Toca REINTENTAR para terminar de preparar la llamada.' : 'No se pudo contactar con DESAPLICAXI. No se creó ninguna identidad local falsa. Reintenta cuando vuelva la conexión.')
+      : (mami ? 'Este enlace ya no sirve. Pide a Axiel que te envíe uno nuevo.' : 'Invitación inválida, usada, vencida o no autorizada por DESAPLICAXI.'));
+    if (mami) ensureMamiRetry();
   } finally {
     activationBusy = false;
     if (button) { button.disabled = false; button.textContent = 'ACTIVAR Y ENTRAR A VIVA CUBA'; }
@@ -202,7 +226,18 @@ function restoreGlobalProfile() {
   }).catch(() => {});
 }
 
-$('activateButton')?.addEventListener('click', () => queueMicrotask(globalizeActivation));
+function ensureMamiRetry() {
+  if ($('mamiRetry') || !$('activationView')) return;
+  const retry = document.createElement('button');
+  retry.id = 'mamiRetry';
+  retry.type = 'button';
+  retry.className = 'primary big';
+  retry.textContent = 'REINTENTAR';
+  retry.addEventListener('click', () => globalizeActivation({ mami: true }));
+  $('activationView').append(retry);
+}
+
+$('activateButton')?.addEventListener('click', () => queueMicrotask(() => globalizeActivation()));
 $('copyDx')?.addEventListener('click', async (event) => {
   const profile = loadProfileRaw();
   if (profile?.backend !== 'desaplicaxi-global') return;
@@ -213,3 +248,8 @@ $('copyDx')?.addEventListener('click', async (event) => {
 
 ensureRecoveryUi();
 restoreGlobalProfile();
+
+if (sessionStorage.getItem(MAMI_PENDING_KEY) === '1') {
+  document.body.classList.add('mami-onboarding');
+  queueMicrotask(() => globalizeActivation({ mami: true }));
+}
