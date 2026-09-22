@@ -48,7 +48,9 @@ function refreshButton() {
     installed: isStandalone(),
     promptAvailable: bridgeReady(),
   });
-  button.textContent = state.label;
+  button.textContent = document.body.classList.contains('mami-mode')
+    ? (state.mode === 'installed' ? '✅ VIVA CUBA INSTALADA' : 'INSTALAR VIVA CUBA')
+    : state.label;
   button.dataset.mode = state.mode;
   button.classList.toggle('is-installed', state.mode === 'installed');
   button.disabled = false;
@@ -90,3 +92,5 @@ if (installBridge) {
 }
 
 refreshButton();
+
+window.addEventListener('viva:mami-ready', refreshButton);
