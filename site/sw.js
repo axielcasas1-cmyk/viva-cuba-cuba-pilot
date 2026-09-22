@@ -1,4 +1,4 @@
-const CACHE = 'viva-cuba-mother-v0.9.0';
+const CACHE = 'viva-cuba-mother-v0.9.1-mami';
 const APP_CACHE_PREFIX = 'viva-cuba-';
 const SHELL = [
   './',
@@ -7,6 +7,9 @@ const SHELL = [
   './install.js',
   './owner-entry.js',
   './owner-user.js',
+  './global-identity-entry.js',
+  './global-owner-entry.js',
+  './lib/desaplicaxi-api.mjs',
   './call.js',
   './version.js',
   './sync.js',
