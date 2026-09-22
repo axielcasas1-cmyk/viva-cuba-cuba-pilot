@@ -1,5 +1,5 @@
 import { buildInviteMessage, buildInviteUrl, generateRoomId } from './lib/core.mjs';
-import { claimGlobalOwner, issueGlobalInvitation, logoutGlobal, whoAmI } from './lib/desaplicaxi-api.mjs';
+import { claimGlobalOwner, issueGlobalInvitation, logoutGlobal, recoverGlobalIdentity, whoAmI } from './lib/desaplicaxi-api.mjs';
 
 const OWNER_TOKEN_KEY = 'vc_dx_owner_session_v1';
 const OWNER_PERSIST_KEY = 'vc_owner_persistent_v1';
@@ -144,6 +144,41 @@ async function handleOwnerUnlock(event) {
   }
 }
 
+async function handleOwnerRecovery(event) {
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (ownerActionBusy) return;
+  const dx = $('ownerRecoverDx')?.value.trim().toUpperCase() || '';
+  const vcr = $('ownerRecoverVcr')?.value.trim().toUpperCase() || '';
+  if (!dx.startsWith('DX-') || !vcr.startsWith('VCR-')) {
+    ownerError('Escribe tu DX OWNER y tu VCR OWNER.');
+    return;
+  }
+  ownerActionBusy = true;
+  ownerError('');
+  const button = $('recoverOwner');
+  if (button) { button.disabled = true; button.textContent = 'RECUPERANDO OWNER…'; }
+  try {
+    const result = await recoverGlobalIdentity(dx, vcr);
+    const identity = await whoAmI(result.sessionToken);
+    if (!identity?.roles?.includes?.('owner')) {
+      await logoutGlobal(result.sessionToken).catch(() => {});
+      throw new Error('RECOVERED_IDENTITY_NOT_OWNER');
+    }
+    localStorage.setItem(OWNER_TOKEN_KEY, result.sessionToken);
+    if ($('ownerRecoverVcr')) $('ownerRecoverVcr').value = '';
+    setOwnerCompatUnlocked();
+    showOwnerClaim(result);
+  } catch (error) {
+    ownerError(error?.message === 'DESAPLICAXI_TIMEOUT'
+      ? 'DESAPLICAXI tardó demasiado en responder. Reintenta cuando mejore la conexión.'
+      : 'No se pudo recuperar OWNER. Revisa DX + VCR; la VCR anterior deja de servir si ya fue rotada.');
+  } finally {
+    ownerActionBusy = false;
+    if (button) { button.disabled = false; button.textContent = 'RECUPERAR OWNER EN ESTE DISPOSITIVO'; }
+  }
+}
+
 function saveInviteLocal(invite) {
   let items = [];
   try { items = JSON.parse(localStorage.getItem(OWNER_INVITES_KEY) || '[]'); } catch {}
@@ -239,6 +274,7 @@ function interceptInviteAction(id, fn) {
 }
 
 $('unlockOwner')?.addEventListener('click', handleOwnerUnlock, { capture: true });
+$('recoverOwner')?.addEventListener('click', handleOwnerRecovery, { capture: true });
 $('ownerSecret')?.addEventListener('keydown', (event) => {
   if (event.key !== 'Enter') return;
   event.preventDefault();
