@@ -122,7 +122,6 @@ body.mami-onboarding #activationView {
   text-align: center;
 }
 body.mami-mode .owner-entry-zone,
-body.mami-mode .download-app-zone,
 body.mami-mode .status-strip,
 body.mami-mode .hero-panel,
 body.mami-mode .info-grid,
@@ -173,3 +172,24 @@ body.mami-mode #joinCall {
   min-height: 68px;
   font-size: 1.05rem;
 }
+
+body.mami-mode .download-app-zone {
+  order: 1;
+  text-align: center;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid rgba(105,240,165,.18);
+  border-radius: 18px;
+  background: rgba(105,240,165,.04);
+}
+body.mami-mode .download-app-zone .download-app-kicker,
+body.mami-mode .download-app-zone .download-app-copy p,
+body.mami-mode .download-app-zone h2 {
+  display: none !important;
+}
+body.mami-mode #downloadAppPrimary {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 16px;
+}
+body.mami-mode #appView { order: 2; }
