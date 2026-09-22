@@ -18,6 +18,8 @@ const OWNER_INVITES_KEY = 'vc_owner_invites_v1';
 const OWNER_AUDIT_KEY = 'vc_owner_audit_v1';
 const OWNER_SECRET_HASH = 'a4ffc408125afa303614e60848bfc306e14030b44f328681f49d5945dd7166e7';
 const MAX_HISTORY = 40;
+const MAMI_PENDING_KEY = 'vc_mami_pending_v1';
+const MAMI_ROOM_KEY = 'vc_mami_room_v1';
 const pending = { invite: '', room: '' };
 let deferredInstallPrompt = null;
 let currentOwnerInvite = null;
@@ -98,12 +100,23 @@ function renderUserRoot() {
 }
 
 function captureInviteHash() {
+  const rawHash = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+  const hashParams = new URLSearchParams(rawHash);
+  const mamiMode = hashParams.get('mode')?.toLowerCase() === 'mami';
   const payload = parseInviteHash(location.hash);
   if (!payload.invite) return false;
   pending.invite = payload.invite;
   pending.room = payload.room;
   inviteCode.value = payload.invite;
   setHidden(inviteDetected, false);
+  if (mamiMode) {
+    sessionStorage.setItem(MAMI_PENDING_KEY, '1');
+    sessionStorage.setItem(MAMI_ROOM_KEY, payload.room || '');
+    document.body.classList.add('mami-onboarding');
+    if ($('activationTitle')) $('activationTitle').textContent = 'Preparando VIVA CUBA…';
+    const intro = activationView?.querySelector('.panel-heading .muted');
+    if (intro) intro.textContent = 'Un momento. Estamos dejando lista la llamada con Axiel.';
+  }
   history.replaceState(null, '', `${location.pathname}${location.search}`);
   return true;
 }
