@@ -159,7 +159,18 @@ function setInviteButtons(enabled) {
   });
 }
 
-async function handleGlobalInvite(event) {
+function buildMamiLink(base, code, room) {
+  return `${buildInviteUrl(base, code, room)}&mode=mami`;
+}
+
+function inviteShareText(invite) {
+  if (invite.mode === 'mami') {
+    return `Mami, toca este enlace. VIVA CUBA se prepara sola y después pulsa “LLAMAR A AXIEL”.\n\n${invite.link}`;
+  }
+  return buildInviteMessage(invite.code, invite.link);
+}
+
+async function handleGlobalInvite(event, mode = 'standard') {
   event.preventDefault();
   event.stopImmediatePropagation();
   if (ownerActionBusy) return;
@@ -175,13 +186,16 @@ async function handleGlobalInvite(event) {
   if (button) { button.disabled = true; button.textContent = 'GENERANDO INVITACIÓN GLOBAL…'; }
   setInviteButtons(false);
   try {
-    const issued = await issueGlobalInvitation(token, 'VIVA CUBA OWNER');
+    const issued = await issueGlobalInvitation(token, mode === 'mami' ? 'MODO MAMI · CUBA' : 'VIVA CUBA OWNER');
     const room = generateRoomId();
-    const link = buildInviteUrl(publicBaseUrl(), issued.code, room);
+    const link = mode === 'mami'
+      ? buildMamiLink(publicBaseUrl(), issued.code, room)
+      : buildInviteUrl(publicBaseUrl(), issued.code, room);
     currentGlobalInvite = {
       code: issued.code,
       room,
       link,
+      mode,
       createdAt: new Date().toISOString(),
       expiresAt: issued.expiresAt,
       status: 'issued-global',
@@ -193,7 +207,9 @@ async function handleGlobalInvite(event) {
     setInviteButtons(true);
     const status = $('ownerStatus');
     if (status) {
-      status.textContent = 'Invitación global emitida por DESAPLICAXI';
+      status.textContent = mode === 'mami'
+        ? 'Enlace Mami emitido por DESAPLICAXI · listo para enviar'
+        : 'Invitación global emitida por DESAPLICAXI';
       status.classList.remove('hidden');
     }
   } catch {
@@ -229,13 +245,14 @@ $('ownerSecret')?.addEventListener('keydown', (event) => {
   event.stopImmediatePropagation();
   handleOwnerUnlock(event);
 }, { capture: true });
-$('generateInvite')?.addEventListener('click', handleGlobalInvite, { capture: true });
+$('generateInvite')?.addEventListener('click', (event) => handleGlobalInvite(event, 'standard'), { capture: true });
+$('generateMamiInvite')?.addEventListener('click', (event) => handleGlobalInvite(event, 'mami'), { capture: true });
 
 interceptInviteAction('copyCode', (invite) => copy(invite.code));
 interceptInviteAction('copyLink', (invite) => copy(invite.link));
-interceptInviteAction('copyMessage', (invite) => copy(buildInviteMessage(invite.code, invite.link)));
+interceptInviteAction('copyMessage', (invite) => copy(inviteShareText(invite)));
 interceptInviteAction('shareInvite', async (invite) => {
-  const text = buildInviteMessage(invite.code, invite.link);
+  const text = inviteShareText(invite);
   if (navigator.share) {
     try { await navigator.share({ title: 'Invitación VIVA CUBA', text, url: invite.link }); return; }
     catch (error) { if (error?.name === 'AbortError') return; }
