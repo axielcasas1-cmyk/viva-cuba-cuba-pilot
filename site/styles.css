@@ -193,3 +193,20 @@ body.mami-mode #downloadAppPrimary {
   border-radius: 16px;
 }
 body.mami-mode #appView { order: 2; }
+
+.owner-recovery {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid rgba(90, 215, 255, .22);
+  border-radius: 16px;
+  background: rgba(90, 215, 255, .035);
+}
+.owner-recovery summary {
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.owner-recovery[open] summary { margin-bottom: 12px; }
+.owner-recovery label { display: block; margin-top: 10px; }
+.owner-recovery input { width: 100%; margin-top: 6px; }
+.owner-recovery button { width: 100%; margin-top: 14px; }
