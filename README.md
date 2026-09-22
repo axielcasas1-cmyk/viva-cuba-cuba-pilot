@@ -8,11 +8,13 @@ Acceso OWNER explícito: https://axielcasas1-cmyk.github.io/viva-cuba-cuba-pilot
 
 ## Fuente única de verdad
 
-- Código aprobado: rama `main` de este repositorio.
-- Release estable: [`site/release.json`](site/release.json).
+- Desarrollo canónico desde 2026-09-23: rama `viva-cuba-modo-mami-canonical-20260923`.
+- Producción pública actual: `main` hasta superar los gates de verificación y promoción.
+- Release estable del carril: [`site/release.json`](site/release.json).
 - [MASTER SPEC canónico](docs/VIVA_CUBA_MASTER_SPEC.md)
 - [Contrato de migración legible por máquinas](docs/migration-contract.json)
 - [ADR separación USER/OWNER e instalación](docs/decisions/2026-08-28-entry-separation-installation.md)
+- [ADR carril canónico Modo Mami](docs/decisions/2026-09-23-canonical-modo-mami.md)
 
 Toda evolución que cambie funciones, roles, rutas, persistencia, seguridad, proveedores, versión o semántica de migración debe actualizar los contratos canónicos en el mismo cambio.
 
@@ -30,8 +32,12 @@ La trazabilidad de release se conserva localmente en `vc_release_audit_v1` de fo
 
 Un dispositivo totalmente sin Internet no puede recibir cambios en ese instante. Al recuperar conectividad debe volver a consultar la madre y converger sin reinstalación manual.
 
-## Estado funcional
+## Estado funcional preservado
 
-El runtime web actual valida PWA pública, activación por invitación, DX local, OWNER persistente, videollamada embebida, contactos/compartir, ubicación bajo permiso, stickers híbridos estáticos + animados y sincronización de releases.
+El runtime web valida PWA pública, activación por invitación, DX local, OWNER persistente, videollamada embebida, contactos/compartir, ubicación bajo permiso, stickers híbridos estáticos + animados y sincronización de releases.
 
-Identidad global autoritativa, mensajería E2EE interna, revocación remota, multi-dispositivo, presencia global y auditoría central se conectan al backend DESAPLICAXI como siguiente gate, sin bifurcar la app por país.
+El carril preserva además la entrada de identidad global DESAPLICAXI, OWNER global, invitaciones autoritativas y diagnóstico de fallos OWNER que existían antes de que el repositorio principal recibiera commits de otros proyectos.
+
+## Regla Modo Mami
+
+La experiencia final para la madre debe reducirse a: **recibir enlace → abrir/instalar → autoenrolar dispositivo → ver a Axiel → llamar**. No se promoverá a producción una versión que reintroduzca registro técnico, credenciales de administrador o pasos innecesarios para ella.
